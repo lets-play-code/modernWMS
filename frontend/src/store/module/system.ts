@@ -5,8 +5,6 @@ export const system = {
   state: {
     language: '',
     openedMenus: [],
-    sideBarWidth: 300, 
-    isSideBarCollapsed: false,
     // Window Size
     clientWidth: 0,
     clientHeight: 0,
@@ -14,13 +12,6 @@ export const system = {
     refreshFlag: false
   },
   mutations: {
-    toggleSideBar(state) {
-    state.isSideBarCollapsed = !state.isSideBarCollapsed
-    state.sideBarWidth = state.isSideBarCollapsed ? 100 : 300
-    },
-    setSideBarWidth(state: StateProps, width: number) {
-      state.sideBarWidth = width
-    },
     setCurrentRouterPath(state: StateProps, path: string) {
       state.currentRouterPath = path
     },
@@ -53,12 +44,6 @@ export const system = {
   },
   actions: {},
   getters: {
-    sideBarWidth(state: StateProps) {
-      return state.sideBarWidth
-    },
-    isSideBarCollapsed(state: StateProps) {
-      return state.isSideBarCollapsed
-    },
     currentRouterPath(state: StateProps) {
       return state.currentRouterPath
     },

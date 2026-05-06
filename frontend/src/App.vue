@@ -1,18 +1,16 @@
 <template>
-  <v-app>
-    <div class="appViewContainer">
-      <v-dialog v-model="loadingFlag" :scrim="false" persistent max-width="200">
-        <v-card color="primary">
-          <v-card-text>
-            Loading...
-            <v-progress-linear indeterminate color="white"></v-progress-linear>
-          </v-card-text>
-        </v-card>
-      </v-dialog>
-      <div v-show="loadingFlag" class="mask"></div>
-      <router-view v-if="data.isShow"></router-view>
-    </div>
-  </v-app>
+  <div class="appViewContainer">
+    <v-dialog v-model="loadingFlag" :scrim="false" persistent max-width="200">
+      <v-card color="primary">
+        <v-card-text>
+          Loading...
+          <v-progress-linear indeterminate color="white"></v-progress-linear>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    <div v-show="loadingFlag" class="mask"></div>
+    <router-view v-if="data.isShow"></router-view>
+  </div>
 </template>
 
 <script setup lang="ts">

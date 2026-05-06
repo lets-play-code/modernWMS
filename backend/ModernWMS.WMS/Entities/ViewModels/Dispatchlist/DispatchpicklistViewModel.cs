@@ -141,20 +141,9 @@ namespace ModernWMS.WMS.Entities.ViewModels
         public decimal price { get; set; } = 0;
 
         /// <summary>
-        /// picker_id
-        /// </summary>
-        public int picker_id { get; set; } = 0;
-
-        /// <summary>
-        /// picker
-        /// </summary>
-        public string picker { get; set; } = string.Empty;
-
-        /// <summary>
         /// putaway_date
         /// </summary>
         public DateTime putaway_date { get; set; } = UtilConvert.MinDate;
-
 
         #endregion Property
     }

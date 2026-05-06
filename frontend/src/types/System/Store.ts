@@ -25,6 +25,4 @@ export interface StateProps {
   clientWidth: number
   clientHeight: number
   refreshFlag: boolean
-  sideBarWidth: number
-  isSideBarCollapsed: boolean
 }

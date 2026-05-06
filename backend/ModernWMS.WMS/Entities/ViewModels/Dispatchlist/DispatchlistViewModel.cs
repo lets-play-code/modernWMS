@@ -299,7 +299,7 @@ namespace ModernWMS.WMS.Entities.ViewModels
         /// <summary>
         /// pick_checker_id
         /// </summary>
-        public int pick_checker_id { get; set; } = 0;
+        public byte pick_checker_id { get; set; } = 0;
 
         /// <summary>
         /// pick_checker

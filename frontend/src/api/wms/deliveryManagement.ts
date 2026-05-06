@@ -161,12 +161,7 @@ export const confirmOrder = (data: ConfirmOrderVO[]) => http({
     method: 'post',
     data
   })
-// Confirm pickingDetail
-export const confirmPickingDetail = (data: number[]) => http({
-  url: '/dispatchlist/confirm-pick-detail',
-  method: 'post',
-  data
-})
+
 // Confirm picking
 export const confirmPicking = (dispatch_no: string) => http({
     url: '/dispatchlist/confirm-pick-dispatchlistno',
@@ -244,11 +239,4 @@ export const viewDeliveryMainDetail = (dispatch_no: string) => http({
     params: {
       dispatch_no
     }
-  })
-
-// Getb pick detail
-export const getPickDetail = (data: any[]) => http({
-    url: '/dispatchlist/picking-list',
-    method: 'post',
-    data
   })

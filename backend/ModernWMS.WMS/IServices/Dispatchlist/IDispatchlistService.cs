@@ -7,7 +7,6 @@
  using ModernWMS.Core.JWT;
  using ModernWMS.WMS.Entities.Models;
  using ModernWMS.WMS.Entities.ViewModels;
-using ModernWMS.WMS.Entities.ViewModels.Dispatchlist;
 namespace ModernWMS.WMS.IServices
 {
     /// <summary>
@@ -89,22 +88,6 @@ namespace ModernWMS.WMS.IServices
         Task<(bool flag, string msg)> ConfirmPickByDispatchNo(string dispatch_no, CurrentUser currentUser);
 
         /// <summary>
-        /// confirm pick detail
-        /// </summary>
-        /// <param name="picklist_id">dispatch list pick detail id</param>
-        /// <param name="currentUser">current user</param>
-        /// <returns></returns>
-        Task<(bool flag, string msg)> ConfirmPickDetail(List<int> picklist_id, CurrentUser currentUser);
-
-        /// <summary>
-        /// cancel confirm pick detail
-        /// </summary>
-        /// <param name="picklist_id">dispatch list pick detail id</param>
-        /// <param name="currentUser">current user</param>
-        /// <returns></returns>
-        Task<(bool flag, string msg)> CancelConfirmPickDetail(List<int> picklist_id, CurrentUser currentUser);
-
-        /// <summary>
         ///  package
         /// </summary>
         /// <param name="viewModels">viewModels</param>
@@ -151,12 +134,7 @@ namespace ModernWMS.WMS.IServices
         /// <param name="dispatch_id">dispatch_id</param>
         /// <returns></returns>
         Task<List<DispatchpicklistViewModel>> GetPickListByDispatchID(int dispatch_id);
-        /// <summary>
-        /// GetPickingList
-        /// </summary>
-        /// <param name="dispatch_id"></param>
-        /// <returns></returns>
-        Task<List<PickinglistViewModel>> GetPickingList(List<int> dispatch_id);
+
         /// <summary>
         ///  cancel order opration 
         /// </summary>

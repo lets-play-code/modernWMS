@@ -16,7 +16,6 @@ using ModernWMS.Core.Services;
 using ModernWMS.Core.Utility;
 using ModernWMS.WMS.Entities.Models;
 using ModernWMS.WMS.Entities.ViewModels;
-using ModernWMS.WMS.Entities.ViewModels.Dispatchlist;
 using ModernWMS.WMS.IServices;
 using System.Collections.Generic;
 
@@ -150,8 +149,6 @@ namespace ModernWMS.WMS.Services
                             length_unit = spu.length_unit,
                             volume_unit = spu.volume_unit,
                             weight_unit = spu.weight_unit,
-                            pick_checker = d.pick_checker,
-                            pick_checker_id = d.pick_checker_id,
                             is_todo = pageSearch.sqlTitle.Contains("dispatch_status") || (pageSearch.sqlTitle.Equals("package") && d.dispatch_status.Equals(4))
                                             || (pageSearch.sqlTitle.Equals("weight") && d.dispatch_status.Equals(5))
                                             || (pageSearch.sqlTitle.Equals("delivery") && d.dispatch_status.Equals(6)) ? false : true,
@@ -231,9 +228,7 @@ namespace ModernWMS.WMS.Services
                                    bar_code = sku.bar_code,
                                    unpicked_qty = d.qty - d.picked_qty,
                                    sku_name = sku.sku_name,
-                                   unit = sku.unit,
-                                   pick_checker = d.pick_checker,
-                                   pick_checker_id = d.pick_checker_id,
+                                   unit = sku.unit
                                }).ToListAsync();
             return datas;
         }
@@ -369,91 +364,9 @@ namespace ModernWMS.WMS.Services
                                    series_number = dpl.series_number,
                                    expiry_date = dpl.expiry_date,
                                    price = dpl.price,
-                                   picker = dpl.picker,
-                                   picker_id = dpl.picker_id,
                                    putaway_date = dpl.putaway_date,
                                }).ToListAsync();
             return datas;
-        }
-        /// <summary>
-        /// GetPickingList
-        /// </summary>
-        /// <param name="dispatch_ids"></param>
-        /// <returns></returns>
-        public async Task<List<PickinglistViewModel>> GetPickingList(List<int> dispatch_ids)
-        {
-            var query = await (from dpl in _dBContext.GetDbSet<DispatchpicklistEntity>().AsNoTracking()
-                               join sku in _dBContext.GetDbSet<SkuEntity>().AsNoTracking() on dpl.sku_id equals sku.id
-                               join spu in _dBContext.GetDbSet<SpuEntity>().AsNoTracking() on sku.spu_id equals spu.id
-                               join owner in _dBContext.GetDbSet<GoodsownerEntity>().AsNoTracking() on dpl.goods_owner_id equals owner.id into o_left
-                               from owner in o_left.DefaultIfEmpty()
-                               join location in _dBContext.GetDbSet<GoodslocationEntity>().AsNoTracking() on dpl.goods_location_id equals location.id
-                               join dispatch in _dBContext.GetDbSet<DispatchlistEntity>().AsNoTracking() on dpl.dispatchlist_id equals dispatch.id
-                               where dispatch_ids.Contains(dpl.dispatchlist_id)
-                               select new
-                               {
-                                   dpl.goods_owner_id,
-                                   goods_owner_name = owner.goods_owner_name ?? "",
-                                   sku_id = dpl.sku_id,
-                                   sku_code = sku.sku_code,
-                                   spu_code = spu.spu_code,
-                                   sku_name = sku.sku_name,
-                                   spu_name = spu.spu_name,
-                                   spu_description = spu.spu_description,
-                                   bar_code = sku.bar_code,
-                                   goods_location_id = dpl.goods_location_id,
-                                   location_name = location.location_name,
-                                   warehouse_id = location.warehouse_id,
-                                   warehouse_name = location.warehouse_name,
-                                   warehouse_area_name = location.warehouse_area_name,
-                                   pick_qty = dpl.pick_qty,
-                                   picked_qty = dpl.picked_qty,
-                                   series_number = dpl.series_number,
-                                   picker = dpl.picker,
-                                   dispatch_no = dispatch.dispatch_no,
-                                   customer_name = dispatch.customer_name
-                               }).ToListAsync();
-            var itemGroups = query
-                .GroupBy(x => new { x.sku_id, x.goods_owner_id, x.goods_location_id, x.warehouse_id, x.series_number })
-                .Select(g => new
-                {
-                    WarehouseId = g.Key.warehouse_id,
-                    WarehouseName = g.First().warehouse_name,
-                    Item = new PickingItemViewModel
-                    {
-                        sku_id = g.Key.sku_id,
-                        sku_code = g.First().sku_code,
-                        spu_code = g.First().spu_code,
-                        sku_name = g.First().sku_name,
-                        spu_name = g.First().spu_name,
-                        spu_description = g.First().spu_description,
-                        bar_code = g.First().bar_code,
-                        goods_owner_name = g.First().goods_owner_name,
-                        warehouse_area_name = g.First().warehouse_area_name,
-                        location_name = g.First().location_name,
-                        pick_qty = g.Sum(x => x.pick_qty),
-                        picked_qty = g.Sum(x => x.picked_qty),
-                        series_number = g.First().series_number,
-                        picker = g.First().picker,
-                        datalist = g.Select(x => new PickingItemDispatchViewModel
-                        {
-                            dispatch_no = x.dispatch_no,
-                            customer_name = x.customer_name,
-                            qty = x.pick_qty
-                        }).ToList()
-                    }
-                }).OrderBy(x=>x.Item.series_number).ToList();
-            var result = itemGroups
-                .GroupBy(x => new { x.WarehouseId, x.WarehouseName })
-                .Select(g => new PickinglistViewModel
-                {
-                    warehouse_id = g.Key.WarehouseId.ToString(),
-                    warehouse_name = g.Key.WarehouseName,
-                    pickingDetails = g.Select(x => x.Item).ToList()
-                })
-                .ToList();
-
-            return result;
         }
 
         /// <summary>
@@ -592,8 +505,6 @@ namespace ModernWMS.WMS.Services
                                   waybill_no = dl.waybill_no,
                                   carrier = dl.carrier,
                                   freightfee = dl.freightfee,
-                                  pick_checker = dl.pick_checker,
-                                  pick_checker_id = dl.pick_checker_id,
                               }
                               ).ToListAsync();
             return data.Adapt<List<DispatchlistDetailViewModel>>();
@@ -782,10 +693,10 @@ namespace ModernWMS.WMS.Services
                                    location_name = gl.location_name == null ? "" : gl.location_name,
                                    warehouse_area_name = gl.warehouse_area_name == null ? "" : gl.warehouse_area_name,
                                    warehouse_name = gl.warehouse_name == null ? "" : gl.warehouse_name,
-                                   series_number = sg.series_number==null ? "":sg.series_number,
-                                   expiry_date = sg.expiry_date==null ? UtilConvert.MinDate : sg.expiry_date,
-                                   price = sg.price == null ? 0:sg.price,
-                                    putaway_date = sg.putaway_date == null ? UtilConvert.MinDate:sg.putaway_date,
+                                   series_number = sg.series_number,
+                                   expiry_date = sg.expiry_date,
+                                   price = sg.price,
+                                   putaway_date = sg.putaway_date == null ? UtilConvert.MinDate : sg.putaway_date,
                                }).ToListAsync();
             var res = (from d in datas
                        group d by new
@@ -1205,92 +1116,11 @@ namespace ModernWMS.WMS.Services
                 t.picked_qty = t.lock_qty;
                 t.dispatch_status = 3;
                 t.last_update_time = now_time;
-                t.pick_checker = currentUser.user_name;
-                t.pick_checker_id = currentUser.user_id;
             });
             pick_datas.ForEach(t =>
             {
-                if (t.picked_qty==0)
-                {
-                    t.picked_qty = t.pick_qty;
-                }
-                t.last_update_time = now_time;
-            });
-            var qty = await _dBContext.SaveChangesAsync();
-            if (qty > 0)
-            {
-                return (true, _stringLocalizer["operation_success"]);
-            }
-            else
-            {
-                return (false, _stringLocalizer["operation_failed"]);
-            }
-        }
-
-        /// <summary>
-        /// confirm pick detail
-        /// </summary>
-        /// <param name="picklist_id">dispatch list pick detail id</param>
-        /// <param name="currentUser">current user</param>
-        /// <returns></returns>
-        public async Task<(bool flag, string msg)> ConfirmPickDetail(List<int> picklist_id, CurrentUser currentUser)
-        {
-            var pick_DBSet = _dBContext.GetDbSet<DispatchpicklistEntity>();
-            var dispatch_DBSet = _dBContext.GetDbSet<DispatchlistEntity>();
-            var pick_datas = await pick_DBSet.Where(t => picklist_id.Contains(t.id)).ToListAsync();
-            if (pick_datas.Any(t=>t.picker_id > 0) || pick_datas.Any(t=>t.picked_qty>0))
-            {
-                return (false, _stringLocalizer["data_changed"]);
-            }
-            pick_datas.ForEach(t=>
-            {
                 t.picked_qty = t.pick_qty;
-                t.pick_qty = 0;
-                t.picker = currentUser.user_name;
-                t.picker_id = currentUser.user_id;
-            });
-            var dispatch_ids = pick_datas.Select(t => t.dispatchlist_id).Distinct().ToList();
-            var dispatch_lists = await dispatch_DBSet
-                .Where(d => dispatch_ids.Contains(d.id))
-                .ToListAsync();
-            foreach (var dispatch in dispatch_lists)
-            {
-                var related_picks = pick_datas.Where(p => p.dispatchlist_id == dispatch.id);
-
-                int totalPicked = related_picks.Sum(p => p.picked_qty);
-                int totalPickQty = related_picks.Sum(p => p.pick_qty);
-                dispatch.picked_qty += totalPicked;
-            }
-            var qty = await _dBContext.SaveChangesAsync();
-            if (qty > 0)
-            {
-                return (true, _stringLocalizer["operation_success"]);
-            }
-            else
-            {
-                return (false, _stringLocalizer["operation_failed"]);
-            }
-        }
-
-        /// <summary>
-        /// cancel confirm pick detail
-        /// </summary>
-        /// <param name="picklist_id">dispatch list pick detail id</param>
-        /// <param name="currentUser">current user</param>
-        /// <returns></returns>
-        public async Task<(bool flag, string msg)> CancelConfirmPickDetail(List<int> picklist_id, CurrentUser currentUser)
-        {
-            var DBSet = _dBContext.GetDbSet<DispatchlistEntity>();
-            var pick_DBSet = _dBContext.GetDbSet<DispatchpicklistEntity>();
-            var pick_datas = await pick_DBSet.Where(t => picklist_id.Contains(t.id)  ).ToListAsync();
-            if (pick_datas.Any(t =>t.picker_id == 0) || pick_datas.Any(t => t.picked_qty > 0))
-            {
-                return (false, _stringLocalizer["data_changed"]);
-            }
-            pick_datas.ForEach(t => 
-            {
-                t.picker = "";
-                t.picker_id = 0;
+                t.last_update_time = now_time;
             });
             var qty = await _dBContext.SaveChangesAsync();
             if (qty > 0)

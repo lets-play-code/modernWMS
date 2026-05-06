@@ -333,7 +333,6 @@
       "edit": "Edit",
       "export": "Export",
       "exportAll": "ExportAll",
-      "pick": "Generate pick lists",
       "exportTemplate": "Export Template",
       "gridColumnGap": "Column spacing(px)",
       "gridRowGap": "Row spacing(px)",
@@ -393,7 +392,6 @@
   "wms": {
     "deliveryManagement": {
       "NoItemSelected": "Please select at least one commodity to delivered!",
-      "pickListDetail": "Pick list detail",
       "ViewInventoryDetails": "View product details",
       "arrival_city": "City of arrival",
       "backToThePreviousStep": "Recall to previous process",
@@ -402,7 +400,7 @@
       "confirmBack": "Confirm withdrawal",
       "confirmDelivery": "Confirm Delivery",
       "confirmOrder": "Confirm Shipment Doc",
-      "confirmPicking": "Picking Audit",
+      "confirmPicking": "Confirm Picking",
       "confirmSignIn": "Confirm Signing",
       "confirmSuccess": "Confirm the shipment order successfully!",
       "create_time": "Creation Time",
@@ -440,8 +438,6 @@
       "packaged": "Packaged",
       "picked": "Picked",
       "picked_qty": "Picked Quantity",
-      "picker":"picker",
-      "pick_checker":"Picking Auditor",
       "preShipment": "Pre Shipment",
       "qty": "Total Quantity",
       "qty_available": "Available Quantity",
