@@ -54,6 +54,7 @@
   - [安装](#安装)
     - [Linux shell](#linux-shell)
     - [Windows PowerShell](#windows-powershell)
+    - [macOS 快速启动](#macos-快速启动)
   - [常见问题](#常见问题)
   - [使用方法](#使用方法)
   - [联系我们](#联系我们)
@@ -177,6 +178,35 @@
   cd C:\ModernWMS\backend\
   Start-Process -WindowStyle hidden -FilePath "dotnet" "ModernWMS.dll --urls http://0.0.0.0:20011" 
   ```
+
+### macOS 快速启动
+
+> 本章节为 macOS 本地开发 / 体验新增快捷启动方式，不替代现有 Linux / Windows 启动命令。
+>
+> 详细说明请查看 [docs/macOS-setup.md](docs/macOS-setup.md)。
+
+1. 先准备 `tmux`、`dotnet`、`node`、`yarn@1.x`。
+2. 在仓库根目录执行：
+
+   ```bash
+   chmod +x ./scripts/macos-dev.sh
+   ./scripts/macos-dev.sh start
+   ```
+
+3. 启动成功后访问：
+   - 前端：`http://127.0.0.1:5173`
+   - 后端：`http://127.0.0.1:20011`
+   - 默认账号：`admin`
+   - 默认密码：`1`
+
+常用命令：
+
+```bash
+./scripts/macos-dev.sh status
+./scripts/macos-dev.sh logs
+./scripts/macos-dev.sh stop
+./scripts/macos-dev.sh reset-db
+```
 
 ## 业务流程
 

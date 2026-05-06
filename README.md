@@ -54,6 +54,7 @@
   - [Installation](#installation)
     - [Linux shell](#linux-shell)
     - [Windows PowerShell](#windows-powershell)
+    - [macOS Quick Start](#macos-quick-start)
     - [Docker(Optional)](#dockeroptional)
   - [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
   - [Usage](#usage)
@@ -178,6 +179,35 @@
   cd C:\ModernWMS\backend\
   Start-Process -WindowStyle hidden -FilePath "dotnet" "ModernWMS.dll --urls http://0.0.0.0:20011" 
   ```
+
+### macOS Quick Start
+
+> This section adds a macOS local quick-start path. It does not replace the existing Linux, Windows, or Docker deployment commands.
+>
+> For more details, see [docs/macOS-setup.md](docs/macOS-setup.md).
+
+1. Prepare `tmux`, `dotnet`, `node`, and `yarn@1.x` on your Mac.
+2. Run the helper script from the repository root:
+
+   ```bash
+   chmod +x ./scripts/macos-dev.sh
+   ./scripts/macos-dev.sh start
+   ```
+
+3. Open the local URLs after startup:
+   - Frontend: `http://127.0.0.1:5173`
+   - Backend: `http://127.0.0.1:20011`
+   - Account: `admin`
+   - Password: `1`
+
+Common commands:
+
+```bash
+./scripts/macos-dev.sh status
+./scripts/macos-dev.sh logs
+./scripts/macos-dev.sh stop
+./scripts/macos-dev.sh reset-db
+```
 
 ### Docker(Optional)
 
