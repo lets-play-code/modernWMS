@@ -54,6 +54,7 @@
   - [安装](#安装)
     - [Linux shell](#linux-shell)
     - [Windows PowerShell](#windows-powershell)
+    - [macOS 快速启动](#macos-快速启动)
   - [常见问题](#常见问题)
   - [使用方法](#使用方法)
   - [联系我们](#联系我们)
@@ -89,7 +90,7 @@
 
   ```bash
   cd /tmp/ && wget https://gitee.com/modernwms/ModernWMS/repository/archive/master.zip
-  ```
+  ```  
 
   + 第二步，安装.NET SDK 和 NodeJS
 
@@ -101,7 +102,7 @@
   sudo apt install -y nodejs
   sudo apt-get install gcc g++ make
   sudo npm install -g yarn
-  ```
+  ```  
 
   + 第三步，编译前端和后端
 
@@ -113,7 +114,7 @@
   sed -i 's#http://127.0.0.1#http://当前部署服务器的IP地址#g' ./.env.production
   sudo yarn && sudo yarn build && sudo cp -rf /tmp/ModernWMS-master/frontend/dist/* /ModernWMS/frontend/
   cd /tmp/ModernWMS-master/backend/ && sudo dotnet publish && sudo cp -rf /tmp/ModernWMS-master/backend/ModernWMS/bin/Debug/net7.0/publish/* /ModernWMS/backend/
-  ```
+  ```  
 
   + 第四步，初始化数据库
   
@@ -130,7 +131,7 @@
   sudo cp -rf /ModernWMS/frontend/* /etc/nginx/html/
   nohup sudo /etc/nginx/sbin/nginx -g 'daemon off;' &
   cd /ModernWMS/backend/ && nohup sudo dotnet ModernWMS.dll --urls http://0.0.0.0:20011 &
-  ```
+  ```  
 ### Windows PowerShell
 
 + 下载源码后编译部署
@@ -178,165 +179,34 @@
   Start-Process -WindowStyle hidden -FilePath "dotnet" "ModernWMS.dll --urls http://0.0.0.0:20011" 
   ```
 
-## 业务流程
+### macOS 快速启动
 
-### 1. 系统初始化和基础数据配置流程
+> 本章节为 macOS 本地开发 / 体验新增快捷启动方式，不替代现有 Linux / Windows 启动命令。
+>
+> 详细说明请查看 [docs/macOS-setup.md](docs/macOS-setup.md)。
 
-#### 用户权限管理流程
+1. 先准备 `tmux`、`dotnet`、`node`、`yarn@1.x`。
+2. 在仓库根目录执行：
 
-**用户管理系统**：
+   ```bash
+   chmod +x ./scripts/macos-dev.sh
+   ./scripts/macos-dev.sh start
+   ```
 
-- 用户注册、登录、密码管理
-- 角色创建和权限分配
-- 多租户用户隔离机制
-- 菜单权限动态配置
+3. 启动成功后访问：
+   - 前端：`http://127.0.0.1:5173`
+   - 后端：`http://127.0.0.1:20011`
+   - 默认账号：`admin`
+   - 默认密码：`1`
 
-#### 基础数据配置流程
+常用命令：
 
-**仓库结构配置**：
-
-- 仓库基本信息设置
-- 仓库区域层级配置
-- 货位管理和定位设置
-- 货位属性配置（长宽高、容量、载重等）
-
-**商品信息管理**：
-
-- 商品分类设置
-- SPU/SKU商品信息管理
-- 供应商和客户信息维护
-- 货主信息配置
-
-### 2. 入库业务流程 
-
-#### ASN完整工作流程
-
-**预到货通知管理**：
-
-- **创建ASN单据** - 供应商或采购部门创建预到货通知
-- **到货确认** - 仓库接收货物并确认到货状态
-- **卸货作业** - 进行货物卸载和初步检查
-- **分拣作业** - 按照商品类型和规格进行分拣
-- **上架作业** - 将商品放置到指定货位
-
-#### ASN状态管理
-
-系统提供完整的ASN状态跟踪和错误处理机制：
-
-- 状态验证和转换控制
-- 数量验证和差异处理
-- 操作确认和撤销功能
-
-### 3. 仓内作业管理流程
-
-#### 库存移动作业流程
-
-**仓库移动操作** ：
-
-- 选择源商品和货位信息
-- 选择目标货位
-- 数量验证（不能超过可用库存）
-- 生成二维码支持移动端操作
-- 确认移动并更新库存记录
-
-#### 库存加工作业流程
-
-**仓库加工操作**：
-
-- **拆分作业**- 将一个商品拆分为多个商品
-- **组合作业** - 将多个商品组合为一个商品
-- **加工确认** 
-- **调整确认** 
-
-#### 库存调整作业流程
-
-**仓库调整操作** ：
-
-- 选择调整类型（盘点、加工、移库等）
-- 商品和货位选择
-- 数量输入和原因记录
-- 提交调整申请和审核确认
-
-#### 库存冻结作业流程
-
-**仓库冻结操作**：
-
-- 冻结操作 - 将库存标记为不可用状态
-- 解冻操作 - 恢复库存的可用状态
-- 冻结原因管理和记录
-
-#### 库存盘点作业流程
-
-**仓库盘点操作**：
-
-- 创建盘点计划和任务分配
-- 从现有库存或商品目录选择盘点
-- 执行实地盘点和数据记录
-- 系统自动计算差异数量
-- 处理盘点差异和结果确认
-
-### 4. 出库业务流程 (发货管理)
-
-#### 发货管理完整流程
-
-**订单确认阶段**  ：
-
-- 接收出库订单和商品确认
-- 库存可用性检查
-- 拣货数量分配和批次管理
-- 有效期和价格信息确认
-
-**包装处理阶段**：
-
-- 待包装商品管理
-- 包装规格配置
-- 包装确认操作
-
-#### 发货状态流转管理
-
-**状态转换控制**：
-
-- 预发货 (Status 0) → 新发货 (Status 1)
-- 新发货 → 待拣货 (Status 2)
-- 待拣货 → 已拣货 (Status 3)
-- 已拣货 → 已包装 (Status 4)
-- 已包装 → 已称重 (Status 5)
-- 已称重 → 出库 (Status 6)
-- 出库 → 已签收 (Status 7)
-
-### 5. 库存管理和监控流程
-
-#### 实时库存监控
-
-- 库存数量实时查询
-- 批次库存追踪
-- 库存预警设置
-- 安全库存监控
-
-### 库存分析和报表
-
-- 库存周转分析
-- 库存账龄统计
-- 库存异常监控
-- 库存成本分析
-
-### 6. 系统集成和数据流转
-
-#### API接口调用流程
-
-- 前端发起API请求
-- 后端控制器处理和验证
-- 业务服务层执行逻辑
-- 数据库操作和事务管理
-- 返回处理结果和状态更新
-
-#### 权限控制和安全流程
-
-- JWT身份验证机制
-- 角色权限检查
-- 菜单权限分配
-- 操作权限控制
-- 多租户数据隔离
+```bash
+./scripts/macos-dev.sh status
+./scripts/macos-dev.sh logs
+./scripts/macos-dev.sh stop
+./scripts/macos-dev.sh reset-db
+```
 
 ## 常见问题
   1) 打开部署服务器的80 和 20011 端口，如果采用的是云服务器，需开放防火墙对这两个端口的访问限制  :bangbang: :bangbang: :bangbang:
@@ -357,6 +227,7 @@
   <img src="image0.png" alt="image0" height="auto" />
 
   <img src="image1.png" alt="image1" height="auto" />
+  
   <img src="image2.png" alt="image2" height="auto" />
 
 ## 联系我们
