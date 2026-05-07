@@ -186,7 +186,7 @@
 >
 > For more details, see [docs/macOS-setup.md](docs/macOS-setup.md).
 
-1. Prepare `tmux`, `dotnet`, `node`, and `yarn@1.x` on your Mac.
+1. Prepare `tmux`, `docker`, `dotnet`, `node`, `yarn@1.x`, and `python3` on your Mac.
 2. Run the helper script from the repository root:
 
    ```bash
@@ -194,9 +194,17 @@
    ./scripts/macos-dev.sh start
    ```
 
-3. Open the local URLs after startup:
+3. On first launch, the script automatically:
+   - creates or reuses a Docker MySQL container
+   - creates or reuses a persistent Docker volume
+   - downloads and imports the official MySQL seed SQL
+   - overrides backend database settings through environment variables
+   - validates the login flow before reporting success
+
+4. Open the local URLs after startup:
    - Frontend: `http://127.0.0.1:5173`
    - Backend: `http://127.0.0.1:20011`
+   - MySQL: `127.0.0.1:33306`
    - Account: `admin`
    - Password: `1`
 
@@ -208,6 +216,10 @@ Common commands:
 ./scripts/macos-dev.sh stop
 ./scripts/macos-dev.sh reset-db
 ```
+
+> `stop` only stops the frontend and backend sessions. The Docker MySQL container keeps running.
+>
+> `reset-db` fully recreates the managed Docker MySQL data and restores the initial seed state.
 
 ### Docker(Optional)
 

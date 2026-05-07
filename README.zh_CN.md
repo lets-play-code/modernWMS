@@ -185,7 +185,7 @@
 >
 > 详细说明请查看 [docs/macOS-setup.md](docs/macOS-setup.md)。
 
-1. 先准备 `tmux`、`dotnet`、`node`、`yarn@1.x`。
+1. 先准备 `tmux`、`docker`、`dotnet`、`node`、`yarn@1.x`、`python3`。
 2. 在仓库根目录执行：
 
    ```bash
@@ -193,9 +193,17 @@
    ./scripts/macos-dev.sh start
    ```
 
-3. 启动成功后访问：
+3. 首次启动时，脚本会自动：
+   - 拉起或创建 Docker MySQL 容器
+   - 创建并复用持久化数据卷
+   - 下载并导入官方 MySQL 初始化脚本
+   - 通过环境变量覆盖后端数据库配置（不要求手工改 `appsettings.json`）
+   - 验证登录链路是否可用
+
+4. 启动成功后访问：
    - 前端：`http://127.0.0.1:5173`
    - 后端：`http://127.0.0.1:20011`
+   - MySQL：`127.0.0.1:33306`
    - 默认账号：`admin`
    - 默认密码：`1`
 
@@ -207,6 +215,10 @@
 ./scripts/macos-dev.sh stop
 ./scripts/macos-dev.sh reset-db
 ```
+
+> `stop` 只停止前后端，不会停止 Docker MySQL。
+>
+> `reset-db` 会真正重建脚本托管的 Docker MySQL 数据，并恢复到初始种子数据状态。
 
 ## 常见问题
   1) 打开部署服务器的80 和 20011 端口，如果采用的是云服务器，需开放防火墙对这两个端口的访问限制  :bangbang: :bangbang: :bangbang:
