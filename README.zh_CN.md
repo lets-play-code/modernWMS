@@ -196,7 +196,7 @@
 3. 首次启动时，脚本会自动：
    - 拉起或创建 Docker MySQL 容器
    - 创建并复用持久化数据卷
-   - 下载并导入官方 MySQL 初始化脚本
+   - 导入仓库内置的官方 MySQL 初始化脚本 `scripts/seeds/database_mysql.sql`
    - 通过环境变量覆盖后端数据库配置（不要求手工改 `appsettings.json`）
    - 验证登录链路是否可用
 
@@ -218,7 +218,7 @@
 
 > `stop` 只停止前后端，不会停止 Docker MySQL。
 >
-> `reset-db` 会真正重建脚本托管的 Docker MySQL 数据，并恢复到初始种子数据状态。
+> `reset-db` 会真正重建脚本托管的 Docker MySQL 数据，并通过仓库内置 SQL 恢复到初始种子状态，避免课程环境依赖在线下载。
 
 ## 常见问题
   1) 打开部署服务器的80 和 20011 端口，如果采用的是云服务器，需开放防火墙对这两个端口的访问限制  :bangbang: :bangbang: :bangbang:

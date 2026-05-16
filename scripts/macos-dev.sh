@@ -8,7 +8,7 @@ FRONTEND_DIR="$REPO_ROOT/frontend"
 RUNTIME_DIR="/tmp/modernwms-macos"
 BACKEND_LOG="$RUNTIME_DIR/backend.log"
 FRONTEND_LOG="$RUNTIME_DIR/frontend.log"
-MYSQL_INIT_SQL_FILE="$RUNTIME_DIR/database_mysql.sql"
+MYSQL_INIT_SQL_FILE="${MODERNWMS_MYSQL_INIT_SQL_FILE:-$REPO_ROOT/scripts/seeds/database_mysql.sql}"
 BACKEND_SESSION="modernwms-macos-backend"
 FRONTEND_SESSION="modernwms-macos-frontend"
 HOST="${MODERNWMS_HOST:-127.0.0.1}"
@@ -22,7 +22,6 @@ MYSQL_VOLUME="${MODERNWMS_MYSQL_VOLUME:-modernwms-macos-mysql-data}"
 MYSQL_IMAGE="${MODERNWMS_MYSQL_IMAGE:-docker.m.daocloud.io/library/mysql:8.0}"
 MYSQL_ROOT_PASSWORD="${MODERNWMS_MYSQL_ROOT_PASSWORD:-123456}"
 MYSQL_DATABASE="wms"
-MYSQL_SQL_URL="https://modernwms.ikeyly.com/assets/staticFile/database_mysql.sql"
 
 usage() {
   cat <<EOF
@@ -33,7 +32,7 @@ Commands:
   stop      Stop backend and frontend tmux sessions; keep Docker MySQL running
   status    Show frontend, backend, login, and Docker MySQL status
   logs      Tail backend/frontend logs and show recent Docker MySQL logs
-  reset-db  Recreate the managed Docker MySQL data volume and re-import official seed SQL
+  reset-db  Recreate the managed Docker MySQL data volume and re-import the bundled seed SQL
   help      Show this help message
 
 Environment overrides:
@@ -45,6 +44,7 @@ Environment overrides:
   MODERNWMS_MYSQL_VOLUME         Default: modernwms-macos-mysql-data
   MODERNWMS_MYSQL_IMAGE          Default: docker.m.daocloud.io/library/mysql:8.0
   MODERNWMS_MYSQL_ROOT_PASSWORD  Default: 123456
+  MODERNWMS_MYSQL_INIT_SQL_FILE  Default: <repo>/scripts/seeds/database_mysql.sql
   MODERNWMS_LOG_LINES            Default: 80
 EOF
 }
@@ -94,6 +94,7 @@ ensure_prerequisites() {
 
   [ -d "$BACKEND_DIR" ] || die "Backend directory not found: $BACKEND_DIR"
   [ -d "$FRONTEND_DIR" ] || die "Frontend directory not found: $FRONTEND_DIR"
+  [ -f "$MYSQL_INIT_SQL_FILE" ] || die "MySQL seed SQL file not found: $MYSQL_INIT_SQL_FILE"
   docker info >/dev/null 2>&1 || die "Docker daemon is not available. Start Docker Desktop (or the Docker daemon) and try again."
 }
 
@@ -149,7 +150,7 @@ ensure_mysql_image() {
 wait_for_mysql() {
   local attempt=0
   while [ "$attempt" -lt 120 ]; do
-    if docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot -e 'SELECT 1' >/dev/null 2>&1; then
+    if docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql --default-character-set=utf8mb4 -uroot -e 'SELECT 1' >/dev/null 2>&1; then
       return 0
     fi
     sleep 1
@@ -190,7 +191,7 @@ ensure_mysql_service() {
 }
 
 mysql_exec() {
-  docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot -N -B -e "$1"
+  docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql --default-character-set=utf8mb4 -uroot -N -B -e "$1"
 }
 
 mysql_schema_ready() {
@@ -203,17 +204,10 @@ mysql_schema_ready() {
   [ "$menu_actions" = "1" ] && [ "$rolemenu_actions" = "1" ]
 }
 
-download_mysql_seed() {
-  prepare_runtime
-  info "Downloading official MySQL seed SQL"
-  curl -fsSL "$MYSQL_SQL_URL" -o "$MYSQL_INIT_SQL_FILE"
-}
-
 initialize_mysql_schema() {
-  download_mysql_seed
-  info "Initializing managed Docker MySQL schema"
+  info "Initializing managed Docker MySQL schema from bundled SQL: $MYSQL_INIT_SQL_FILE"
   mysql_exec "DROP DATABASE IF EXISTS \`${MYSQL_DATABASE}\`;"
-  docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" -i "$MYSQL_CONTAINER" mysql -uroot < "$MYSQL_INIT_SQL_FILE"
+  docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" -i "$MYSQL_CONTAINER" mysql --default-character-set=utf8mb4 -uroot < "$MYSQL_INIT_SQL_FILE"
   mysql_schema_ready || die "Managed Docker MySQL schema initialization failed."
 }
 

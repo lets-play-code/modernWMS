@@ -16,7 +16,7 @@
 
 1. 检查 `tmux`、`docker`、`dotnet`、`node`、`yarn`、`python3` 是否可用
 2. 自动拉起或复用脚本管理的 Docker MySQL 容器
-3. 如果数据库未初始化，自动下载并导入官方 MySQL 初始化脚本
+3. 如果数据库未初始化，自动导入仓库内置的官方 MySQL 初始化脚本
 4. 通过环境变量覆盖后端数据库配置，不修改仓库里的 `appsettings.json`
 5. 通过 `tmux` 在后台启动后端和前端
 6. 在启动后执行登录链路检查：`/login` + `/rolemenu/authority`
@@ -101,7 +101,7 @@ chmod +x ./scripts/macos-dev.sh
 
 - 拉取 MySQL 镜像（如果本机还没有）
 - 创建 Docker MySQL 容器和持久化数据卷
-- 下载并导入官方 MySQL 初始化脚本
+- 导入仓库内置的官方 MySQL 初始化脚本（默认路径：`scripts/seeds/database_mysql.sql`）
 - 安装前端依赖
 - 启动后端和前端
 
@@ -156,8 +156,10 @@ chmod +x ./scripts/macos-dev.sh
 2. 删除脚本管理的 MySQL 容器
 3. 删除脚本管理的 MySQL 数据卷
 4. 重新创建 MySQL 容器
-5. 重新导入官方初始化 SQL
+5. 重新导入仓库内置的官方初始化 SQL
 6. 保持 MySQL 容器继续运行
+
+这意味着课程环境不再依赖在线下载 seed SQL，网络不稳定时也能完成重置。
 
 这等价于把本地数据库恢复到“刚初始化完成”的状态。
 
@@ -173,13 +175,17 @@ chmod +x ./scripts/macos-dev.sh
 
 - `/tmp/modernwms-macos/backend.log`
 - `/tmp/modernwms-macos/frontend.log`
-- `/tmp/modernwms-macos/database_mysql.sql`
+
+数据库初始化 SQL 默认保存在仓库内：
+
+- `scripts/seeds/database_mysql.sql`
 
 这意味着：
 
 - 仓库里的 `appsettings.json` 不需要为 macOS 本地开发而修改
 - 本地日志和临时文件不会写回仓库目录
 - 数据库数据由 Docker volume 持久化保存
+- 数据库重置不依赖额外网络下载
 
 ## 可选环境变量
 
@@ -193,6 +199,7 @@ chmod +x ./scripts/macos-dev.sh
 - `MODERNWMS_MYSQL_VOLUME=modernwms-macos-mysql-data`
 - `MODERNWMS_MYSQL_IMAGE=docker.m.daocloud.io/library/mysql:8.0`
 - `MODERNWMS_MYSQL_ROOT_PASSWORD=123456`
+- `MODERNWMS_MYSQL_INIT_SQL_FILE=<repo>/scripts/seeds/database_mysql.sql`
 
 例如，如果你本机端口冲突，可以临时覆盖：
 

@@ -197,7 +197,7 @@
 3. On first launch, the script automatically:
    - creates or reuses a Docker MySQL container
    - creates or reuses a persistent Docker volume
-   - downloads and imports the official MySQL seed SQL
+   - imports the bundled official MySQL seed SQL from `scripts/seeds/database_mysql.sql`
    - overrides backend database settings through environment variables
    - validates the login flow before reporting success
 
@@ -219,7 +219,7 @@ Common commands:
 
 > `stop` only stops the frontend and backend sessions. The Docker MySQL container keeps running.
 >
-> `reset-db` fully recreates the managed Docker MySQL data and restores the initial seed state.
+> `reset-db` fully recreates the managed Docker MySQL data and restores the initial seed state from the bundled SQL file, so it does not rely on downloading seed data during the course.
 
 ### Docker(Optional)
 

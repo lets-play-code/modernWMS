@@ -92,7 +92,7 @@ assert_managed_mysql_running() {
 }
 
 mysql_exec() {
-  docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot -N -B -e "$1"
+  docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql --default-character-set=utf8mb4 -uroot -N -B -e "$1"
 }
 
 assert_probe_table_exists() {
