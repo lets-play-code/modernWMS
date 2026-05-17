@@ -10,6 +10,7 @@ export interface DeliveryManagementVO extends UniformFileNaming {
   customer_id?: number
   customer_name?: string
   picked_qty?: number
+  pick_checker?: string
   detailList: DeliveryManagementDetailListVO[]
 }
 
@@ -39,6 +40,7 @@ export interface DeliveryManagementDetailVO extends DeliveryManagementVO {
   volume?: number
   weight_unit?: number
   is_todo: boolean
+  pick_checker?: string
 }
 
 export interface addRequestVO {
@@ -127,4 +129,70 @@ export interface DeliveryBatchAllocationVO {
   dateTo: string
   allocationRule: string
   is_valid: boolean
+}
+
+export interface DispatchpickOperationVO {
+  picklist_id_list: number[]
+}
+
+export interface DispatchpickDetailVO {
+  id: number
+  dispatchlist_id: number
+  dispatch_no?: string
+  goods_owner_id: number
+  goods_owner_name?: string
+  goods_location_id: number
+  warehouse_name?: string
+  warehouse_area_name?: string
+  location_name?: string
+  sku_id: number
+  sku_code?: string
+  spu_code?: string
+  spu_name?: string
+  spu_description?: string
+  bar_code?: string
+  image_url?: string
+  pick_qty: number
+  picked_qty: number
+  series_number?: string
+  expiry_date?: string
+  price?: number
+  putaway_date?: string
+  picker_id?: number
+  picker?: string
+}
+
+export interface DispatchpickSheetRequestVO {
+  dispatchlist_id_list: number[]
+}
+
+export interface DispatchpickSheetDispatchVO {
+  dispatchlist_id: number
+  dispatch_no: string
+  customer_name: string
+  pick_qty: number
+  picked_qty: number
+}
+
+export interface DispatchpickSheetItemVO {
+  sku_id: number
+  goods_owner_id: number
+  goods_location_id: number
+  spu_code?: string
+  spu_name?: string
+  spu_description?: string
+  sku_code?: string
+  bar_code?: string
+  image_url?: string
+  goods_owner_name?: string
+  warehouse_name?: string
+  warehouse_area_name?: string
+  location_name?: string
+  series_number?: string
+  expiry_date?: string
+  price?: number
+  putaway_date?: string
+  pick_qty: number
+  picked_qty: number
+  related_dispatches: DispatchpickSheetDispatchVO[]
 }

@@ -132,8 +132,33 @@ namespace ModernWMS.WMS.IServices
         /// get pick list by dispatch_id
         /// </summary>
         /// <param name="dispatch_id">dispatch_id</param>
+        /// <param name="currentUser">current user</param>
         /// <returns></returns>
-        Task<List<DispatchpicklistViewModel>> GetPickListByDispatchID(int dispatch_id);
+        Task<List<DispatchpicklistViewModel>> GetPickListByDispatchID(int dispatch_id, CurrentUser currentUser);
+
+        /// <summary>
+        /// generate pick sheet from pending dispatch details
+        /// </summary>
+        /// <param name="viewModel">request</param>
+        /// <param name="currentUser">current user</param>
+        /// <returns></returns>
+        Task<List<DispatchpickSheetItemViewModel>> GetPickSheet(DispatchpickSheetRequestViewModel viewModel, CurrentUser currentUser);
+
+        /// <summary>
+        /// confirm pick detail rows
+        /// </summary>
+        /// <param name="viewModel">request</param>
+        /// <param name="currentUser">current user</param>
+        /// <returns></returns>
+        Task<(bool flag, string msg)> ConfirmPickDetail(DispatchpicklistOperateViewModel viewModel, CurrentUser currentUser);
+
+        /// <summary>
+        /// revoke pick detail rows before review
+        /// </summary>
+        /// <param name="viewModel">request</param>
+        /// <param name="currentUser">current user</param>
+        /// <returns></returns>
+        Task<(bool flag, string msg)> RevokePickDetail(DispatchpicklistOperateViewModel viewModel, CurrentUser currentUser);
 
         /// <summary>
         ///  cancel order opration 

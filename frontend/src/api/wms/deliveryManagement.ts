@@ -3,6 +3,8 @@ import { PageConfigProps } from '@/types/System/Form'
 import {
   addRequestVO,
   ConfirmOrderVO,
+  DispatchpickOperationVO,
+  DispatchpickSheetRequestVO,
   PackageVO,
   WeighVO,
   DeliveryVO,
@@ -169,6 +171,27 @@ export const confirmPicking = (dispatch_no: string) => http({
     params: {
       dispatch_no
     }
+  })
+
+// Generate pick sheet
+export const getPickSheet = (data: DispatchpickSheetRequestVO) => http({
+    url: '/dispatchlist/pick-sheet',
+    method: 'post',
+    data
+  })
+
+// Confirm pick detail rows
+export const confirmPickDetail = (data: DispatchpickOperationVO) => http({
+    url: '/dispatchlist/confirm-pick-detail',
+    method: 'put',
+    data
+  })
+
+// Revoke pick detail rows
+export const revokePickDetail = (data: DispatchpickOperationVO) => http({
+    url: '/dispatchlist/revoke-pick-detail',
+    method: 'put',
+    data
   })
 
 // Pack

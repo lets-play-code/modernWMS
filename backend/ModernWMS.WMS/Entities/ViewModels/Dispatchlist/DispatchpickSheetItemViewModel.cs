@@ -1,100 +1,60 @@
-/*
- * date：2022-12-22
- * developer：NoNo
- */
-
-using System;
-using System.ComponentModel.DataAnnotations;
 using ModernWMS.Core.Utility;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace ModernWMS.WMS.Entities.ViewModels
 {
     /// <summary>
-    /// dispatchpicklist viewModel
+    /// aggregated pick sheet row
     /// </summary>
-    public class DispatchpicklistViewModel
+    public class DispatchpickSheetItemViewModel
     {
-        #region constructor
-
         /// <summary>
-        /// constructor
-        /// </summary>
-        public DispatchpicklistViewModel()
-        {
-        }
-
-        #endregion constructor
-
-        #region Property
-
-        /// <summary>
-        /// id
-        /// </summary>
-        [Display(Name = "id")]
-        public int id { get; set; } = 0;
-
-        /// <summary>
-        /// dispatchlist_id
-        /// </summary>
-        [Display(Name = "dispatchlist_id")]
-        public int dispatchlist_id { get; set; } = 0;
-
-        /// <summary>
-        /// goods_owner_id
-        /// </summary>
-        [Display(Name = "goods_owner_id")]
-        public int goods_owner_id { get; set; } = 0;
-
-        /// <summary>
-        /// goods_location_id
-        /// </summary>
-        [Display(Name = "goods_location_id")]
-        public int goods_location_id { get; set; } = 0;
-
-        /// <summary>
-        /// sku_id
+        /// sku id
         /// </summary>
         [Display(Name = "sku_id")]
         public int sku_id { get; set; } = 0;
 
         /// <summary>
-        /// pick_qty
+        /// goods owner id
         /// </summary>
-        [Display(Name = "pick_qty")]
-        public int pick_qty { get; set; } = 0;
+        [Display(Name = "goods_owner_id")]
+        public int goods_owner_id { get; set; } = 0;
 
         /// <summary>
-        /// picked_qty
+        /// goods location id
         /// </summary>
-        [Display(Name = "picked_qty")]
-        public int picked_qty { get; set; } = 0;
+        [Display(Name = "goods_location_id")]
+        public int goods_location_id { get; set; } = 0;
 
         /// <summary>
-        /// spu_code
+        /// spu code
         /// </summary>
         public string spu_code { get; set; } = string.Empty;
 
         /// <summary>
-        /// spu_name
+        /// spu name
         /// </summary>
         public string spu_name { get; set; } = string.Empty;
 
         /// <summary>
-        /// spu_description
+        /// spu description
         /// </summary>
         public string spu_description { get; set; } = string.Empty;
 
         /// <summary>
-        /// bar_code
+        /// sku code
+        /// </summary>
+        public string sku_code { get; set; } = string.Empty;
+
+        /// <summary>
+        /// bar code
         /// </summary>
         public string bar_code { get; set; } = string.Empty;
 
         /// <summary>
-        /// sku_code
-        /// </summary>
-        public string sku_code { get; set; } = string.Empty;
-        /// <summary>
-        /// image_url
+        /// image url
         /// </summary>
         public string image_url { get; set; } = string.Empty;
 
@@ -104,34 +64,29 @@ namespace ModernWMS.WMS.Entities.ViewModels
         public string goods_owner_name { get; set; } = string.Empty;
 
         /// <summary>
-        /// warehouse_name
+        /// warehouse name
         /// </summary>
         public string warehouse_name { get; set; } = string.Empty;
 
         /// <summary>
-        /// warehouse_area_name
+        /// warehouse area name
         /// </summary>
         public string warehouse_area_name { get; set; } = string.Empty;
 
         /// <summary>
-        /// warehouse_area_property
-        /// </summary>
-        public byte warehouse_area_property { get; set; } = 0;
-
-        /// <summary>
-        /// location_name
+        /// location name
         /// </summary>
         public string location_name { get; set; } = string.Empty;
 
         /// <summary>
-        /// series_number
+        /// series number
         /// </summary>
         [Display(Name = "series_number")]
         [MaxLength(64, ErrorMessage = "MaxLength")]
         public string series_number { get; set; } = string.Empty;
 
         /// <summary>
-        /// expiry_date
+        /// expiry date
         /// </summary>
         public DateTime expiry_date { get; set; } = UtilConvert.MinDate;
 
@@ -141,28 +96,25 @@ namespace ModernWMS.WMS.Entities.ViewModels
         public decimal price { get; set; } = 0;
 
         /// <summary>
-        /// putaway_date
+        /// putaway date
         /// </summary>
         public DateTime putaway_date { get; set; } = UtilConvert.MinDate;
 
         /// <summary>
-        /// picker id
+        /// planned pick qty
         /// </summary>
-        [Display(Name = "picker_id")]
-        public int picker_id { get; set; } = 0;
+        [Display(Name = "pick_qty")]
+        public int pick_qty { get; set; } = 0;
 
         /// <summary>
-        /// picker
+        /// confirmed pick qty
         /// </summary>
-        [Display(Name = "picker")]
-        public string picker { get; set; } = string.Empty;
+        [Display(Name = "picked_qty")]
+        public int picked_qty { get; set; } = 0;
 
         /// <summary>
-        /// dispatch no
+        /// related dispatch orders
         /// </summary>
-        [Display(Name = "dispatch_no")]
-        public string dispatch_no { get; set; } = string.Empty;
-
-        #endregion Property
+        public List<DispatchpickSheetDispatchViewModel> related_dispatches { get; set; } = new List<DispatchpickSheetDispatchViewModel>();
     }
 }

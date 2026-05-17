@@ -103,7 +103,7 @@
               :disabled="!data.authorityList.includes('picked-confirm') || row.dispatch_status !== 2"
               :flat="true"
               icon="mdi-cart-arrow-down"
-              :tooltip-text="$t('wms.deliveryManagement.confirmPicking')"
+              :tooltip-text="$t('wms.deliveryManagement.reviewPicking')"
               @click="method.confirmPicking(row)"
             ></tooltip-btn>
             <tooltip-btn
@@ -302,7 +302,7 @@ const method = reactive({
   // Confirm picking
   confirmPicking: async (row: DeliveryManagementVO) => {
     hookComponent.$dialog({
-      content: `${ i18n.global.t('wms.deliveryManagement.confirmPicking') }?`,
+      content: `${ i18n.global.t('wms.deliveryManagement.reviewPicking') }?`,
       handleConfirm: async () => {
         if (row.dispatch_no) {
           const { data: res } = await confirmPicking(row.dispatch_no)
