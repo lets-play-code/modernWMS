@@ -57,10 +57,8 @@
     - [macOS 快速启动](#macos-快速启动)
   - [常见问题](#常见问题)
   - [使用方法](#使用方法)
-  - [联系我们](#联系我们)
   - [版权信息](#版权信息)
   - [特别声明](#特别声明)
-  - [捐赠](#捐赠)
 
 
 ## 介绍
@@ -232,24 +230,6 @@
   
   初始账号: admin 密码: 1
   ```
-  <h4>
-    <a href="https://wmsonline.ikeyly.com">体验地址入口</a>
-  </h4> 
-
-  <img src="image0.png" alt="image0" height="auto" />
-
-  <img src="image1.png" alt="image1" height="auto" />
-  
-  <img src="image2.png" alt="image2" height="auto" />
-
-## 联系我们
-
-<h4>
-  <a href="https://gitee.com/leucoon/vue-element-plus-admin/issues/new?issue%5Bassignee_id%5D=0&issue%5Bmilestone_id%5D=0">提交一个Bug</a>
-</h4>
-<h4>
-  <a href="https://gitee.com/leucoon/vue-element-plus-admin/issues/new?issue%5Bassignee_id%5D=0&issue%5Bmilestone_id%5D=0">提交一个建议</a>
-</h4>
 
 ## 版权信息
 该项目使用的是 [Apache2.0](https://opensource.org/license/apache-2-0/) 协议. 详情查阅[LICENSE.txt](https://gitee.com/modernwms/ModernWMS/blob/master/LICENSE).必须遵守此协议。
@@ -260,9 +240,3 @@
 
 ![dotnetchina](https://gitee.com/dotnetchina/home/raw/master/assets/dotnetchina-raw.png "dotNET China LOGO")
 
-## 捐赠
-
-如果您觉得我的开源库可以帮到您，请我们的作者喝杯咖啡吧，您的支持将鼓励我们继续创作。
-
-<img src="alipay.jpg" alt="image3" height="auto" />
-<img src="wechat.jpg" alt="image4" height="auto" />

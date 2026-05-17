@@ -58,9 +58,7 @@
     - [Docker(Optional)](#dockeroptional)
   - [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
   - [Usage](#usage)
-  - [Contact](#contact)
   - [License](#license)
-  - [Donate](#donate)
 
 ## Introduction 
 
@@ -305,32 +303,8 @@ Common commands:
   Password: 1
   ```
 
-  <h4>
-    <a href="https://wmsonline.ikeyly.com">Demo</a>
-  </h4> 
-
-  <img src="image2.png" alt="image2" height="auto" />
-
-  <img src="image0.png" alt="image0" height="auto" />
-
-  <img src="image1.png" alt="image1" height="auto" />
-  
-## Contact
-
-<h4>
-  <a href="https://gitee.com/modernwms/ModernWMS/issues/new?issue%5Bassignee_id%5D=0&issue%5Bmilestone_id%5D=0">Report a BUG</a>
-</h4>
-<h4>
-  <a href="https://gitee.com/leucoon/vue-element-plus-admin/issues/new?issue%5Bassignee_id%5D=0&issue%5Bmilestone_id%5D=0">Submit a suggestion</a>
-</h4>
-
 ## License
 
 Distributed under the [Apache2.0](https://opensource.org/license/apache-2-0/) License. See [LICENSE.txt](https://gitee.com/modernwms/ModernWMS/blob/master/LICENSE) for more information.This must be observed.
 
-## Donate
 
-If it's helpful to you, you can donate us by alipay,by wechat. Your support will encourage us to continue creating
-
-<img src="alipay.jpg" alt="image3" height="auto" />
-<img src="wechat.jpg" alt="image4" height="auto" />
