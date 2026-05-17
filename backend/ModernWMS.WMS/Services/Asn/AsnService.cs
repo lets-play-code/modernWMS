@@ -1081,10 +1081,24 @@ namespace ModernWMS.WMS.Services
         public async Task<(List<AsnmasterBothViewModel> data, int totals)> PageAsnmasterAsync(PageSearch pageSearch, CurrentUser currentUser)
         {
             QueryCollection queries = new QueryCollection();
+            string supplier_name = string.Empty;
+            string sku_name = string.Empty;
+
             if (pageSearch.searchObjects.Any())
             {
                 pageSearch.searchObjects.ForEach(s =>
                 {
+                    if (s.Name == "supplier_name")
+                    {
+                        supplier_name = s.Text?.Trim() ?? string.Empty;
+                        return;
+                    }
+                    if (s.Name == "sku_name")
+                    {
+                        sku_name = s.Text?.Trim() ?? string.Empty;
+                        return;
+                    }
+
                     queries.Add(s);
                 });
             }
@@ -1144,9 +1158,27 @@ namespace ModernWMS.WMS.Services
                                               is_valid = a.is_valid,
                                               expiry_date = a.expiry_date,
                                               price = a.price,
-                                              sorted_qty = a.sorted_qty,
-                                          }).ToList()
+                                               sorted_qty = a.sorted_qty,
+                                           }).ToList()
                         };
+
+            if (!string.IsNullOrWhiteSpace(supplier_name))
+            {
+                query = query.Where(m => Asns.AsNoTracking().Any(a => a.asnmaster_id == m.id
+                    && !string.IsNullOrEmpty(a.supplier_name)
+                    && a.supplier_name.Contains(supplier_name)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(sku_name))
+            {
+                query = query.Where(m => (from a in Asns.AsNoTracking()
+                                          join k in Skus.AsNoTracking() on a.sku_id equals k.id
+                                          where a.asnmaster_id == m.id
+                                          && !string.IsNullOrEmpty(k.sku_name)
+                                          && k.sku_name.Contains(sku_name)
+                                          select a.id).Any());
+            }
+
             query = query.Where(queries.AsExpression<AsnmasterBothViewModel>());
             int totals = await query.CountAsync();
             List<AsnmasterBothViewModel> list;

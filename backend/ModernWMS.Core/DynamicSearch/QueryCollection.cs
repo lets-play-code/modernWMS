@@ -112,7 +112,7 @@ namespace ModernWMS.Core.DynamicSearch
             }
             if (expression == null)
             {
-                return null;
+                return True<T>();
             }
             return ((Expression<Func<T, bool>>)Expression.Lambda(expression, parameter));
         }
