@@ -7,13 +7,14 @@
 
 ## Agent 快速入口 / 建议阅读顺序
 1. `AGENTS.md`
-2. `.understand-anything/knowledge-graph.json`
-3. `scripts/macos-dev.sh`
-4. `docs/macOS-setup.md`
-5. 启动入口：
+2. `docs/README.md`
+3. `.understand-anything/knowledge-graph.json`
+4. `scripts/macos-dev.sh`
+5. `docs/macOS-setup.md`
+6. 启动入口：
    - `backend/ModernWMS/Program.cs`
    - `frontend/src/main.ts`
-6. 再进入目标模块目录做局部阅读
+7. 再进入目标模块目录做局部阅读
 
 如果任务是：
 - **架构理解 / 影响分析 / onboarding / diff 理解**：先看 knowledge graph，再读代码
@@ -28,7 +29,7 @@
 - `backend/ModernWMS.WMS`：WMS 业务域（Controllers / Services / Entities）
 - `frontend/src`：前端应用源码
 - `scripts`：开发/初始化/辅助脚本
-- `docs`：补充文档
+- `docs`：补充文档（先看 `docs/README.md` 了解目录规范）
 
 ### 通常不应优先扫描的路径
 除非任务明确涉及，否则不要把时间花在这些目录上：
@@ -58,7 +59,10 @@
 - `scripts`
   - 本地开发、数据库初始化、数据导入、辅助运行脚本
 - `docs`
-  - 项目补充文档与本地开发说明
+  - 文档入口见 `docs/README.md`
+  - 长期文档按 `domain-model / software-design / requirements / development-standards` 分类
+  - `docs/progress` 记录 `planned / active / archive` 三类进度文档
+  - AI 工作流文档默认放 `docs/progress/planned/superpowers/...`，完成后归档到 `docs/progress/archive/...`
 
 ## 端口约定
 默认本地端口：
@@ -173,6 +177,7 @@ tmux new-session -d -s modernwms-frontend "<command>"
 ```
 
 ## 开发时的优先理解路径
+- 先看文档入口与目录规范：`docs/README.md`
 - 看系统如何启动：`backend/ModernWMS/Program.cs`、`frontend/src/main.ts`
 - 看后端公共能力：`backend/ModernWMS.Core`
 - 看 WMS 业务：`backend/ModernWMS.WMS`

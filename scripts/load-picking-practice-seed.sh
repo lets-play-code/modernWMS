@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-PRACTICE_SEED_FILE="${MODERNWMS_PRACTICE_SEED_FILE:-$REPO_ROOT/docs/practice-design/modernwms-picking-enhancement-practice-seed.sql}"
+PRACTICE_SEED_FILE="${MODERNWMS_PRACTICE_SEED_FILE:-$REPO_ROOT/docs/requirements/classroom-practice/modernwms-picking-enhancement-practice-seed.sql}"
 MYSQL_CONTAINER="${MODERNWMS_MYSQL_CONTAINER:-modernwms-macos-mysql}"
 MYSQL_ROOT_PASSWORD="${MODERNWMS_MYSQL_ROOT_PASSWORD:-123456}"
 MYSQL_DATABASE="${MODERNWMS_MYSQL_DATABASE:-wms}"
@@ -20,7 +20,7 @@ Environment overrides:
   MODERNWMS_MYSQL_CONTAINER      Default: modernwms-macos-mysql
   MODERNWMS_MYSQL_ROOT_PASSWORD  Default: 123456
   MODERNWMS_MYSQL_DATABASE       Default: wms
-  MODERNWMS_PRACTICE_SEED_FILE   Default: <repo>/docs/practice-design/modernwms-picking-enhancement-practice-seed.sql
+  MODERNWMS_PRACTICE_SEED_FILE   Default: <repo>/docs/requirements/classroom-practice/modernwms-picking-enhancement-practice-seed.sql
 EOF
 }
 

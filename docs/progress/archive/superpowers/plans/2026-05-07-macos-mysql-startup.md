@@ -27,8 +27,8 @@
 - Modify: `scripts/tests/test-macos-dev-reset-db.sh` — 验证 reset-db 真正重建数据库并恢复初始状态
 
 ### Docs / working artifacts
-- Modify: `docs/superpowers/specs/2026-05-07-macos-mysql-startup-design.md`
-- Modify: `docs/superpowers/plans/2026-05-07-macos-mysql-startup.md`
+- Modify: `docs/progress/archive/superpowers/specs/2026-05-07-macos-mysql-startup-design.md`
+- Modify: `docs/progress/archive/superpowers/plans/2026-05-07-macos-mysql-startup.md`
 
 ## Gate 1: 写出失败测试并确认当前脚本不满足目标
 
