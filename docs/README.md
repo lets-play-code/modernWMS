@@ -7,7 +7,7 @@
 - 让长期有效的知识有固定归档位置，而不是散落在 `docs/` 根目录
 - 让 Agent 和人工都能快速判断“这类信息应该写到哪里”
 - 区分**长期知识**、**过程进度**与**课堂练习资料**
-- 支持“一个主题一篇文档”或“一个主题一个目录 + 多篇文档”两种组织方式
+- 支持“一个主题一篇文档”“一个主题一个目录 + 多篇文档”以及“全局总览 + 上下文子目录”三种组织方式
 
 ## 目录总览
 
@@ -41,6 +41,7 @@ docs/
 
 说明：
 - 可以只有一篇总文档，也可以拆成 `README.md + 多篇专题文档`
+- 当主题同时需要全局视角和局部落地时，推荐采用“全局总览 + 上下文子目录”的混合模式
 - 当业务概念和技术实现都要说明时，业务含义优先放这里，技术落地细节放到 `software-design/`
 
 ### 2. `docs/software-design/`
@@ -149,7 +150,7 @@ AI 工作流产物（例如 spec、implementation plan、执行中的中间说�
 
 ### 组织建议
 
-优先使用以下两种方式之一：
+优先使用以下三种方式之一：
 
 1. **单文档模式**
    - 适用于主题小、边界清晰的内容
@@ -162,11 +163,21 @@ AI 工作流产物（例如 spec、implementation plan、执行中的中间说�
      - `docs/domain-model/bounded-contexts.md`
      - `docs/domain-model/strategic-ddd-design.md`
 
+3. **全局总览 + 上下文子目录模式**
+   - 适用于既需要系统全景，又需要按边界持续细化的主题
+   - 示例：
+     - `docs/domain-model/user-journeys.md`
+     - `docs/domain-model/bounded-contexts.md`
+     - `docs/domain-model/strategic-ddd-design.md`
+     - `docs/domain-model/ubiquitous-language.md`
+     - `docs/domain-model/<context>/overview.md`
+
 ### 命名建议
 
 - 稳定主题文档：使用 `kebab-case.md`
 - 带时间属性的需求/调研文档：使用 `YYYY-MM-DD-topic.md`
-- 每个子目录建议维护一个 `README.md` 作为目录索引
+- `README.md` 只用于目录级元信息，例如阅读顺序、组织方式、归档规则
+- 实际业务 / 技术内容文档应使用有语义的名字，例如 `overview.md`、`state-machine.md`、`rules.md`
 
 ## 写文档时的归档决策
 
@@ -197,6 +208,7 @@ AI 工作流产物（例如 spec、implementation plan、执行中的中间说�
 ## 当前已建立的入口
 
 - `docs/domain-model/README.md`
+- `docs/domain-model/ubiquitous-language.md`
 - `docs/software-design/README.md`
 - `docs/requirements/README.md`
 - `docs/development-standards/README.md`

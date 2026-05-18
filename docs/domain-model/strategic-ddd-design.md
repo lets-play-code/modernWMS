@@ -1,6 +1,8 @@
 # ModernWMS DDD 战略设计
 
 > 本文不是把现有代码“硬包装成 DDD”，而是基于当前源码实际结构，总结出更适合长期维护的领域战略视角。
+>
+> 文档分工说明：本文只保留系统级战略判断。具体上下文的本地旅程、状态机、模型与规则，请转到各上下文子目录中的 `overview.md`；术语定义请看 [`ubiquitous-language.md`](./ubiquitous-language.md)。
 
 ## 1. 领域使命
 
@@ -55,38 +57,14 @@ ModernWMS 的核心使命可以概括为一句话：
 
 ---
 
-## 3. 统一语言（Ubiquitous Language）
+## 3. 统一语言（摘要）
 
-当前代码已经隐含了一套比较稳定的领域语言。后续文档和设计应尽量沿用这套词汇，而不是重新发明概念。
+统一语言已独立整理到 [`ubiquitous-language.md`](./ubiquitous-language.md)。战略设计层面只强调两个最关键判断：
 
-| 术语 | 在系统中的含义 | 主要代码映射 |
-| --- | --- | --- |
-| Warehouse | 仓库 | `WarehouseEntity` |
-| Warehouse Area / Reservoir | 仓库中的功能区域，如拣货区、存储区、残次区 | `WarehouseareaEntity` |
-| Goods Location | 具体库位 | `GoodslocationEntity` |
-| Goods Owner | 货权归属方，决定库存归属，不等于供应商或客户 | `GoodsownerEntity` |
-| Supplier | 入库来源方 | `SupplierEntity` |
-| Customer | 出库去向方 | `CustomerEntity` |
-| Category | 商品分类 | `CategoryEntity` |
-| SPU | 商品主档 | `SpuEntity` |
-| SKU | 商品规格 / 最小库存管理对象 | `SkuEntity` |
-| Safety Stock | 安全库存阈值 | `SkuSafetyStockEntity` |
-| ASN / Arrival Notice | 到货通知明细 | `AsnEntity` |
-| ASN Master | 到货通知单头 | `AsnmasterEntity` |
-| ASN Sort | 分拣记录 / 批次记录 | `AsnsortEntity` |
-| Stock | 库存台账层 | `StockEntity` |
-| Dispatch List | 出库明细行 | `DispatchlistEntity` |
-| Dispatch Pick List | 拣货明细 | `DispatchpicklistEntity` |
-| Stock Move | 移库任务 | `StockmoveEntity` |
-| Stock Taking | 盘点任务 | `StocktakingEntity` |
-| Stock Adjust | 调整凭证 | `StockadjustEntity` |
-| Stock Process | 组合 / 拆分加工任务 | `StockprocessEntity` |
+1. **团队应优先复用既有术语，而不是为同一概念反复发明新名字**
+2. **`Stock` 不是简单库存余额，而是一层被多维度限定的库存事实**
 
-### 统一语言里的一个关键点
-
-**Stock 不是“某个 SKU 的汇总库存”，而是一层被多维度限定的库存事实。**
-
-从入库、出库、移库、盘点的实现可见，库存层通常由以下维度识别：
+其中第二点尤为关键。库存层通常由以下维度识别：
 
 - `sku_id`
 - `goods_location_id`
@@ -96,7 +74,7 @@ ModernWMS 的核心使命可以概括为一句话：
 - `price`
 - `putaway_date`
 
-这决定了 ModernWMS 的库存概念更接近“库存层 / 库存批次层”，而不是简单库存余额。
+这决定了 ModernWMS 的库存概念更接近“库存层 / 库存批次层”，而不是简单库存余额。后续讨论若出现术语歧义，应先回到 [`ubiquitous-language.md`](./ubiquitous-language.md) 统一概念。
 
 ---
 
