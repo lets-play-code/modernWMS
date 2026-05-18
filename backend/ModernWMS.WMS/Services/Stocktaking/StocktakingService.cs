@@ -318,6 +318,10 @@ namespace ModernWMS.WMS.Services
             {
                 return (false, _stringLocalizer["not_exists_entity"]);
             }
+            if (await _dBContext.GetDbSet<StockadjustEntity>().AnyAsync(t => t.job_type == 1 && t.source_table_id == entity.id))
+            {
+                return (false, _stringLocalizer["status_changed"]);
+            }
             // change stock sku qty
             var Stocks = _dBContext.GetDbSet<StockEntity>();
             var stockEntity = await Stocks.FirstOrDefaultAsync(t => t.sku_id.Equals(entity.sku_id)

@@ -17,11 +17,13 @@ public sealed class ApiClient
     public async Task SendAsync(HttpMethod method, string path, string? body = null)
     {
         var client = await GetClientAsync();
-        using var request = new HttpRequestMessage(method, path);
+        var resolvedPath = _context.ResolvePlaceholders(path);
+        using var request = new HttpRequestMessage(method, resolvedPath);
 
         if (!string.IsNullOrWhiteSpace(body))
         {
-            request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+            var resolvedBody = _context.ResolvePlaceholders(body);
+            request.Content = new StringContent(resolvedBody, Encoding.UTF8, "application/json");
         }
 
         if (!string.IsNullOrWhiteSpace(_context.AccessToken))

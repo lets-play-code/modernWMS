@@ -45,20 +45,76 @@ internal static class MasterDataBuilder
         var spuId = await EnsureSpuAsync(connection, spu, categoryId, supplierId, supplier);
         var skuId = await EnsureSkuAsync(connection, sku, spuId);
 
-        Track(context, warehouse, location, owner, supplier, customer, category, spu, sku);
-        return new MasterDataIds(warehouseId, areaId, locationId, ownerId, supplierId, customerId, categoryId, spuId, skuId);
+        var ids = new MasterDataIds(warehouseId, areaId, locationId, ownerId, supplierId, customerId, categoryId, spuId, skuId);
+        Track(context, row, ids, warehouse, area, location, owner, supplier, customer, category, spu, sku);
+        return ids;
     }
 
-    private static void Track(ScenarioDataContext context, string warehouse, string location, string owner, string supplier, string customer, string category, string spu, string sku)
+    private static void Track(
+        ScenarioDataContext context,
+        IReadOnlyDictionary<string, string> row,
+        MasterDataIds ids,
+        string warehouse,
+        string area,
+        string location,
+        string owner,
+        string supplier,
+        string customer,
+        string category,
+        string spu,
+        string sku)
     {
-        context.Track("warehouse.name", warehouse);
-        context.Track("location.code", location);
-        context.Track("goods_owner.name", owner);
-        context.Track("supplier.name", supplier);
-        context.Track("customer.name", customer);
-        context.Track("category.name", category);
-        context.Track("spu.code", spu);
-        context.Track("sku.code", sku);
+        TrackValue(context, "warehouse.id", ids.WarehouseId);
+        TrackValue(context, "warehouse.name", warehouse);
+        TrackValue(context, "area.id", ids.AreaId);
+        TrackValue(context, "area.name", area);
+        TrackValue(context, "location.id", ids.LocationId);
+        TrackValue(context, "location.code", location);
+        TrackValue(context, "goods_owner.id", ids.GoodsOwnerId);
+        TrackValue(context, "goods_owner.name", owner);
+        TrackValue(context, "supplier.id", ids.SupplierId);
+        TrackValue(context, "supplier.name", supplier);
+        TrackValue(context, "customer.id", ids.CustomerId);
+        TrackValue(context, "customer.name", customer);
+        TrackValue(context, "category.id", ids.CategoryId);
+        TrackValue(context, "category.name", category);
+        TrackValue(context, "spu.id", ids.SpuId);
+        TrackValue(context, "spu.code", spu);
+        TrackValue(context, "sku.id", ids.SkuId);
+        TrackValue(context, "sku.code", sku);
+
+        TrackAlias(context, row, "warehouse.key", "warehouse", ("id", ids.WarehouseId.ToString()), ("name", warehouse));
+        TrackAlias(context, row, "area.key", "area", ("id", ids.AreaId.ToString()), ("name", area));
+        TrackAlias(context, row, "location.key", "location", ("id", ids.LocationId.ToString()), ("code", location));
+        TrackAlias(context, row, "goods_owner.key", "goods_owner", ("id", ids.GoodsOwnerId.ToString()), ("name", owner));
+        TrackAlias(context, row, "supplier.key", "supplier", ("id", ids.SupplierId.ToString()), ("name", supplier));
+        TrackAlias(context, row, "customer.key", "customer", ("id", ids.CustomerId.ToString()), ("name", customer));
+        TrackAlias(context, row, "category.key", "category", ("id", ids.CategoryId.ToString()), ("name", category));
+        TrackAlias(context, row, "spu.key", "spu", ("id", ids.SpuId.ToString()), ("code", spu));
+        TrackAlias(context, row, "sku.key", "sku", ("id", ids.SkuId.ToString()), ("code", sku));
+    }
+
+    private static void TrackValue(ScenarioDataContext context, string key, object value)
+    {
+        context.Track(key, value.ToString()!);
+    }
+
+    private static void TrackAlias(
+        ScenarioDataContext context,
+        IReadOnlyDictionary<string, string> row,
+        string aliasKey,
+        string prefix,
+        params (string Suffix, string Value)[] values)
+    {
+        if (!row.TryGetValue(aliasKey, out var alias) || string.IsNullOrWhiteSpace(alias))
+        {
+            return;
+        }
+
+        foreach (var (suffix, value) in values)
+        {
+            context.Track($"{prefix}.{alias}.{suffix}", value);
+        }
     }
 
     private static async Task<int> EnsureWarehouseAsync(MySqlConnection connection, string name)

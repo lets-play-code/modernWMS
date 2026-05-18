@@ -38,7 +38,53 @@ public sealed class TokenManagerTests
         CreateTokenManager().GetRefreshTokenExpireMinute().Should().Be(16);
     }
 
-    private static TokenManager CreateTokenManager()
+    [Fact]
+    public void GetCurrentUserReadsBearerTokenFromHttpContextHeader()
+    {
+        var accessor = new HttpContextAccessor { HttpContext = new DefaultHttpContext() };
+        var manager = CreateTokenManager(accessor);
+        var user = new CurrentUser
+        {
+            user_id = 7,
+            user_num = "u7",
+            user_name = "Header User",
+            user_role = "tester",
+            tenant_id = 3
+        };
+        accessor.HttpContext!.Request.Headers["Authorization"] = $"Bearer {manager.GenerateToken(user).token}";
+
+        var parsed = manager.GetCurrentUser();
+
+        parsed.user_id.Should().Be(7);
+        parsed.user_num.Should().Be("u7");
+        parsed.tenant_id.Should().Be(3);
+    }
+
+    [Fact]
+    public void GetCurrentUserReturnsDefaultUserWhenHeaderOrTokenIsMissing()
+    {
+        var noContextManager = CreateTokenManager(new HttpContextAccessor());
+        var missingHeaderManager = CreateTokenManager(new HttpContextAccessor { HttpContext = new DefaultHttpContext() });
+        var nonBearerContext = new DefaultHttpContext();
+        nonBearerContext.Request.Headers["Authorization"] = "Token something";
+        var nonBearerManager = CreateTokenManager(new HttpContextAccessor { HttpContext = nonBearerContext });
+
+        noContextManager.GetCurrentUser().user_name.Should().Be("admin");
+        missingHeaderManager.GetCurrentUser().user_name.Should().Be("admin");
+        nonBearerManager.GetCurrentUser().user_role.Should().Be("admin");
+        missingHeaderManager.GetCurrentUser(string.Empty).tenant_id.Should().Be(1);
+    }
+
+    [Fact]
+    public void GenerateRefreshTokenReturnsBase64EncodedRandomBytes()
+    {
+        var refreshToken = CreateTokenManager().GenerateRefreshToken();
+
+        refreshToken.Should().NotBeNullOrWhiteSpace();
+        Convert.FromBase64String(refreshToken).Should().HaveCount(32);
+    }
+
+    private static TokenManager CreateTokenManager(IHttpContextAccessor? accessor = null)
     {
         var settings = Options.Create(new TokenSettings
         {
@@ -47,6 +93,6 @@ public sealed class TokenManagerTests
             SigningKey = "ModernWMS_SigningKey",
             ExpireMinute = 15
         });
-        return new TokenManager(settings, new HttpContextAccessor());
+        return new TokenManager(settings, accessor ?? new HttpContextAccessor());
     }
 }

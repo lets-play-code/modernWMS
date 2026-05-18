@@ -340,13 +340,17 @@ namespace ModernWMS.WMS.Services
             {
                 return (false, _stringLocalizer["not_exists_entity"]);
             }
+            if (entity.move_status != 0)
+            {
+                return (false, _stringLocalizer["status_changed"]);
+            }
             var now_time = DateTime.Now;
             entity.handler = currentUser.user_name;
             entity.handle_time = now_time;
             entity.move_status = 1;
             entity.last_update_time = now_time;
             var orig_stock = await stock_DBSet.FirstOrDefaultAsync(t => t.goods_owner_id == entity.goods_owner_id && t.series_number == entity.series_number && t.goods_location_id == entity.orig_goods_location_id && t.sku_id == entity.sku_id && t.expiry_date == entity.expiry_date && t.price == entity.price && t.putaway_date == entity.putaway_date);
-            var dest_stock = await stock_DBSet.FirstOrDefaultAsync(t => t.goods_owner_id == entity.goods_owner_id && t.series_number == entity.series_number && t.goods_location_id == entity.dest_googs_location_id && t.sku_id != entity.sku_id && t.expiry_date == entity.expiry_date && t.price == entity.price && t.putaway_date == entity.putaway_date);
+            var dest_stock = await stock_DBSet.FirstOrDefaultAsync(t => t.goods_owner_id == entity.goods_owner_id && t.series_number == entity.series_number && t.goods_location_id == entity.dest_googs_location_id && t.sku_id == entity.sku_id && t.expiry_date == entity.expiry_date && t.price == entity.price && t.putaway_date == entity.putaway_date);
             if (orig_stock != null)
             {
                 if (orig_stock.qty == entity.qty)

@@ -51,7 +51,7 @@ namespace ModernWMS.Core.Utility
                         {
                             if (string.IsNullOrEmpty(value))
                             {
-                                pi.SetValue(t, 0M);
+                                pi.SetValue(t, 0D);
                             }
                             else
                             {

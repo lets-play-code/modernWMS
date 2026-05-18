@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using ModernWMS.Tests.ApiE2E.Support;
+using ModernWMS.Tests.ApiE2E.Support.ObjectPatterns;
 using Reqnroll;
 
 namespace ModernWMS.Tests.ApiE2E.Steps;
@@ -11,7 +12,7 @@ namespace ModernWMS.Tests.ApiE2E.Steps;
 public sealed class ResponseAssertionSteps
 {
     private static readonly Regex AssertionLine = new(
-        @"^(?<path>[\w\.]+)\s*(?<operator>>=|<=|=|>|<)\s*(?<expected>.+)$",
+        @"^(?<path>[\w\.\[\]]+)\s*(?<operator>>=|<=|=|>|<)\s*(?<expected>.+)$",
         RegexOptions.Compiled);
 
     private readonly ScenarioDataContext _context;
@@ -28,6 +29,22 @@ public sealed class ResponseAssertionSteps
         {
             AssertLine(line);
         }
+    }
+
+    [Then("response body should match:")]
+    public void ResponseBodyShouldMatch(string patternText)
+    {
+        _context.LatestJson.Should().NotBeNull("response body should be JSON for object-pattern assertions");
+        var pattern = ObjectPatternParser.Parse(patternText);
+        ObjectPatternAssertions.AssertMatches(_context.LatestJson!.RootElement, pattern);
+    }
+
+    [Then("记录响应字段 {string} 为 {string}")]
+    public void TrackResponseField(string path, string key)
+    {
+        var actual = ResolvePath(path);
+        actual.Should().NotBeNull($"response field '{path}' should exist before tracking it as '{key}'");
+        _context.Track(key, ToTrackedString(actual));
     }
 
     private void AssertLine(string line)
@@ -84,11 +101,51 @@ public sealed class ResponseAssertionSteps
                 return GetSize(current);
             }
 
-            current.ValueKind.Should().Be(JsonValueKind.Object, $"path segment '{part}' requires an object");
-            current.TryGetProperty(part, out current).Should().BeTrue($"JSON property '{part}' should exist in path '{path}'");
+            var (propertyName, index) = ParsePathPart(part);
+            if (!string.IsNullOrWhiteSpace(propertyName))
+            {
+                current.ValueKind.Should().Be(JsonValueKind.Object, $"path segment '{part}' requires an object");
+                current.TryGetProperty(propertyName, out current).Should().BeTrue($"JSON property '{propertyName}' should exist in path '{path}'");
+            }
+
+            if (index is not null)
+            {
+                current.ValueKind.Should().Be(JsonValueKind.Array, $"path segment '{part}' requires an array");
+                current.GetArrayLength().Should().BeGreaterThan(index.Value, $"array index '{index}' should exist in path '{path}'");
+                current = current.EnumerateArray().ElementAt(index.Value);
+            }
         }
 
         return ConvertJsonElement(current);
+    }
+
+    private static (string? PropertyName, int? Index) ParsePathPart(string part)
+    {
+        if (int.TryParse(part, NumberStyles.Integer, CultureInfo.InvariantCulture, out var numericIndex))
+        {
+            return (null, numericIndex);
+        }
+
+        var bracketStart = part.IndexOf('[');
+        if (bracketStart < 0)
+        {
+            return (part, null);
+        }
+
+        var bracketEnd = part.IndexOf(']', bracketStart + 1);
+        if (bracketEnd < 0)
+        {
+            throw new InvalidOperationException($"Unsupported array path segment: {part}");
+        }
+
+        var propertyName = part[..bracketStart];
+        var indexText = part[(bracketStart + 1)..bracketEnd];
+        if (!int.TryParse(indexText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var index))
+        {
+            throw new InvalidOperationException($"Unsupported array path segment: {part}");
+        }
+
+        return (propertyName, index);
     }
 
     private static int GetSize(JsonElement element)
@@ -175,6 +232,17 @@ public sealed class ResponseAssertionSteps
             case "<=": actualNumber.Should().BeLessThanOrEqualTo(expectedNumber, line); break;
             default: throw new InvalidOperationException($"Unsupported assertion operator: {op}");
         }
+    }
+
+    private static string ToTrackedString(object? actual)
+    {
+        return actual switch
+        {
+            string text => text,
+            bool boolean => boolean ? "true" : "false",
+            IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
+            _ => actual?.ToString() ?? throw new InvalidOperationException("Cannot track a null response value.")
+        };
     }
 
     private static bool IsNumeric(object? value)

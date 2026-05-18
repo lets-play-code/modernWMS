@@ -344,7 +344,7 @@ namespace ModernWMS.WMS.Services
                     queries.Add(s);
                 });
             }
-            // 添加仓库表WareHouse的DBSet
+
             var warehouse_DBSet = _dBContext.GetDbSet<WarehouseEntity>().AsNoTracking();
             var DbSet = _dBContext.GetDbSet<StockEntity>().Where(t => t.tenant_id.Equals(currentUser.tenant_id));
             var dispatchpick_DBSet = _dBContext.GetDbSet<DispatchpicklistEntity>();
@@ -356,64 +356,66 @@ namespace ModernWMS.WMS.Services
             var move_DBSet = _dBContext.GetDbSet<StockmoveEntity>();
             var sku_safety_DBSet = _dBContext.GetDbSet<SkuSafetyStockEntity>();
             var stock_group_datas = from stock in DbSet.AsNoTracking()
-                                    join gl in location_DBSet.AsNoTracking() on stock.goods_location_id equals gl.id
+                                    join gl in location_DBSet on stock.goods_location_id equals gl.id
                                     where stock.tenant_id == currentUser.tenant_id
-                                    group new { stock,gl } by new { stock.sku_id, gl.warehouse_id } into sg
+                                    group new { stock, gl } by new { stock.sku_id, gl.warehouse_id } into sg
                                     select new
                                     {
                                         sku_id = sg.Key.sku_id,
                                         warehouse_id = sg.Key.warehouse_id,
                                         qty_frozen = sg.Where(t => t.stock.is_freeze == true).Sum(e => e.stock.qty),
-                                        qty = sg.Sum(t => t.stock.qty)
+                                        qty = sg.Sum(t => t.stock.qty),
+                                        qty_normal = sg.Where(t => t.gl.warehouse_area_property != 5).Sum(t => t.stock.qty),
+                                        qty_normal_frozen = sg.Where(t => t.gl.warehouse_area_property != 5 && t.stock.is_freeze == true).Sum(t => t.stock.qty)
                                     };
 
             var dispatch_group_datas = from dp in dispatch_DBSet.AsNoTracking()
                                        join dpp in dispatchpick_DBSet.AsNoTracking() on dp.id equals dpp.dispatchlist_id
-                                       join gl in location_DBSet.AsNoTracking() on dpp.goods_location_id equals gl.id
+                                       join gl in location_DBSet on dpp.goods_location_id equals gl.id
                                        where dp.dispatch_status > 1 && dp.dispatch_status < 6
-                                       group dpp by new { dpp.sku_id, gl.warehouse_id } into dg
+                                       group new { dpp, gl } by new { dpp.sku_id, gl.warehouse_id } into dg
                                        select new
                                        {
                                            sku_id = dg.Key.sku_id,
                                            warehouse_id = dg.Key.warehouse_id,
-                                           qty_locked = dg.Sum(t => t.pick_qty)
+                                           qty_locked = dg.Sum(t => t.dpp.pick_qty),
+                                           qty_normal_locked = dg.Where(t => t.gl.warehouse_area_property != 5).Sum(t => t.dpp.pick_qty)
                                        };
             var process_locked_group_datas = from pd in processdetail_DBSet
-                                             join gl in location_DBSet.AsNoTracking() on pd.goods_location_id equals gl.id
+                                             join gl in location_DBSet on pd.goods_location_id equals gl.id
                                              where pd.is_update_stock == false && pd.is_source == true
                                              group new { pd, gl } by new { pd.sku_id, gl.warehouse_id } into pdg
                                              select new
                                              {
                                                  sku_id = pdg.Key.sku_id,
                                                  warehouse_id = pdg.Key.warehouse_id,
-                                                 qty_locked = pdg.Sum(t => t.pd.qty)
+                                                 qty_locked = pdg.Sum(t => t.pd.qty),
+                                                 qty_normal_locked = pdg.Where(t => t.gl.warehouse_area_property != 5).Sum(t => t.pd.qty)
                                              };
 
             var move_locked_group_datas = from m in move_DBSet.AsNoTracking()
-                                          join gl in location_DBSet.AsNoTracking() on m.orig_goods_location_id equals gl.id
+                                          join gl in location_DBSet on m.orig_goods_location_id equals gl.id
                                           where m.move_status == 0
                                           group new { m, gl } by new { m.sku_id, gl.warehouse_id } into mg
                                           select new
                                           {
                                               sku_id = mg.Key.sku_id,
                                               warehouse_id = mg.Key.warehouse_id,
-                                              qty_locked = mg.Sum(t => t.m.qty)
+                                              qty_locked = mg.Sum(t => t.m.qty),
+                                              qty_normal_locked = mg.Where(t => t.gl.warehouse_area_property != 5).Sum(t => t.m.qty)
                                           };
             var query = from sg in stock_group_datas
-                        join dp in dispatch_group_datas on new { sg.sku_id, sg.warehouse_id } equals new { dp.sku_id, dp.warehouse_id } into dp_left
-                        from dp in dp_left.DefaultIfEmpty()
-                        join pl in process_locked_group_datas on new { sg.sku_id, sg.warehouse_id } equals new { pl.sku_id, pl.warehouse_id } into pl_left
-                        from pl in pl_left.DefaultIfEmpty()
-                        join m in move_locked_group_datas on new { sg.sku_id, sg.warehouse_id } equals new { m.sku_id, m.warehouse_id } into m_left
-                        from m in m_left.DefaultIfEmpty()
                         join sku in sku_DBSet on sg.sku_id equals sku.id
                         join spu in spu_DBSet on sku.spu_id equals spu.id
-                        //关联仓库表，用于显示仓库名称
                         join wh in warehouse_DBSet on sg.warehouse_id equals wh.id
-                        //库位表，用于计算库存？？
-                        join gl in location_DBSet on sg.warehouse_id equals gl.id
                         join sss in sku_safety_DBSet on new { sg.sku_id, sg.warehouse_id } equals new { sss.sku_id, sss.warehouse_id } into sss_left
                         from sss in sss_left.DefaultIfEmpty()
+                        let dispatch_locked = dispatch_group_datas.Where(t => t.sku_id == sg.sku_id && t.warehouse_id == sg.warehouse_id).Select(t => (int?)t.qty_locked).FirstOrDefault() ?? 0
+                        let dispatch_normal_locked = dispatch_group_datas.Where(t => t.sku_id == sg.sku_id && t.warehouse_id == sg.warehouse_id).Select(t => (int?)t.qty_normal_locked).FirstOrDefault() ?? 0
+                        let process_locked = process_locked_group_datas.Where(t => t.sku_id == sg.sku_id && t.warehouse_id == sg.warehouse_id).Select(t => (int?)t.qty_locked).FirstOrDefault() ?? 0
+                        let process_normal_locked = process_locked_group_datas.Where(t => t.sku_id == sg.sku_id && t.warehouse_id == sg.warehouse_id).Select(t => (int?)t.qty_normal_locked).FirstOrDefault() ?? 0
+                        let move_locked = move_locked_group_datas.Where(t => t.sku_id == sg.sku_id && t.warehouse_id == sg.warehouse_id).Select(t => (int?)t.qty_locked).FirstOrDefault() ?? 0
+                        let move_normal_locked = move_locked_group_datas.Where(t => t.sku_id == sg.sku_id && t.warehouse_id == sg.warehouse_id).Select(t => (int?)t.qty_normal_locked).FirstOrDefault() ?? 0
                         select new SafetyStockManagementViewModel
                         {
                             sku_id = sg.sku_id,
@@ -422,12 +424,12 @@ namespace ModernWMS.WMS.Services
                             sku_code = sku.sku_code,
                             image_url = sku.image_url,
                             sku_name = sku.sku_name,
-                            qty_available = gl.warehouse_area_property == 5 ? 0 : (sg.qty - sg.qty_frozen - (dp.qty_locked == null ? 0 : dp.qty_locked) - (pl.qty_locked == null ? 0 : pl.qty_locked) - (m.qty_locked == null ? 0 : m.qty_locked)),
+                            qty_available = sg.qty_normal - sg.qty_normal_frozen - dispatch_normal_locked - process_normal_locked - move_normal_locked,
                             qty_frozen = sg.qty_frozen,
-                            qty_locked = (dp.qty_locked == null ? 0 : dp.qty_locked) + (pl.qty_locked == null ? 0 : pl.qty_locked) + (m.qty_locked == null ? 0 : m.qty_locked),
+                            qty_locked = dispatch_locked + process_locked + move_locked,
                             qty = sg.qty,
                             warehouse_name = wh.warehouse_name,
-                            safety_stock_qty = sss.safety_stock_qty == null ? 0 : sss.safety_stock_qty,
+                            safety_stock_qty = sss == null ? 0 : sss.safety_stock_qty,
                         };
             query = query.Where(queries.AsExpression<SafetyStockManagementViewModel>());
             int totals = await query.CountAsync();
@@ -444,7 +446,7 @@ namespace ModernWMS.WMS.Services
                        .Take(pageSearch.pageSize)
                        .ToListAsync();
             }
-                return (list, totals);
+            return (list, totals);
         }
 
         /// <summary>

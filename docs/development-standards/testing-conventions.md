@@ -120,6 +120,25 @@ API E2E / BDD 测试应优先收敛到少量标准 step。step 数量应主要�
 
 API step 只负责发起请求和记录响应，不承担业务断言。
 
+HTTP path 和 JSON body 可以引用当前场景已跟踪的值：
+
+```gherkin
+当GET "/spu?id=${spu.id}"
+当PUT "/spu/sku-safety-stock":
+  """
+  {
+    "sku_id": ${sku.id},
+    "detailList": [{ "warehouse_id": ${warehouse.id}, "safety_stock_qty": 6 }]
+  }
+  """
+```
+
+规则：
+
+- `${key}` 必须来自领域规格或响应字段跟踪，且在当前场景内唯一。
+- `${md5:key}` 可用于需要提交 MD5 密码等派生值的场景。
+- 占位符只用于连接前置数据与真实 API 请求，不应用来隐藏被测业务行为。
+
 ### 3.3 响应断言 step
 
 统一使用结构化响应断言：
@@ -139,6 +158,23 @@ API step 只负责发起请求和记录响应，不承担业务断言。
   """
 ```
 
+简单字段断言适合使用 `response should be`。需要对象/数组局部匹配时，使用对象模式断言：
+
+```gherkin
+那么response body should match:
+  """
+  : {
+    isSuccess: true
+    data: {
+      rows: [{
+        spu_code: 'SPU-E2E-MD-001'
+        detailList: [{ sku_code: 'SKU-E2E-MD-001' }]
+      }]
+    }
+  }
+  """
+```
+
 断言表达应支持：
 
 - 对象字段匹配；
@@ -146,9 +182,18 @@ API step 只负责发起请求和记录响应，不承担业务断言。
 - 通配符 `*`；
 - 正则；
 - 字段路径；
+- 数组索引，例如 `body.json.data.rows[0].id`；
 - 数组投影；
 - `size` 等集合断言；
 - JSON 字符串解析后的断言。
+
+当后续 API 需要使用响应中的 id/code 时，使用响应字段跟踪 step：
+
+```gherkin
+并且记录响应字段 "body.json.data.id" 为 "user.id"
+```
+
+该 step 只能记录当前响应中已经断言存在的字段，不能替代业务断言。
 
 ### 3.4 数据断言 step
 
@@ -461,15 +506,16 @@ python3 ../scripts/check-dotnet-coverage.py \
 
 说明：
 
-- 长期目标仍为 `ModernWMS.Core + ModernWMS.WMS` 后端覆盖率高于 80%。
-- 当前第一批测试保护已经建立 API E2E、后端测试、UI E2E 和覆盖率统计链路，但覆盖率尚未达到 80%。
-- 在覆盖率补充任务完成前，允许通过环境变量临时降低本地全量脚本门槛，例如：
+- 长期目标为 `ModernWMS.Core + ModernWMS.WMS` 后端覆盖率高于 80%。
+- 后端覆盖率验收优先使用仓库脚本：
 
 ```bash
-MODERNWMS_COVERAGE_THRESHOLD=0.30 ./scripts/test-all.sh
+./scripts/test-all.sh --skip-ui
 ```
 
-该临时门槛只用于阶段性验证测试基础设施可运行，不能替代长期 80% 覆盖率验收。
+- `--skip-ui` 只跳过 Playwright UI E2E，不跳过后端 API E2E / 单元测试 / 覆盖率检查。
+- `MODERNWMS_COVERAGE_THRESHOLD` 仅用于阶段性诊断；正式验收不得降低默认 `0.80` 门槛。
+- 覆盖率达标不等于测试质量达标。每个 context 达标后应使用 mutation-style 抽样：临时破坏关键业务分支，确认对应测试失败，然后恢复生产代码。
 
 ### 10.3 UI E2E
 

@@ -64,6 +64,10 @@ namespace ModernWMS.Core.Utility
         /// <returns></returns>
         public static double ObjToDouble(this object thisValue)
         {
+            if (thisValue == null)
+            {
+                return 0;
+            }
             if (string.IsNullOrEmpty(thisValue.ToString()))
             {
                 return 0;
@@ -82,6 +86,10 @@ namespace ModernWMS.Core.Utility
         /// <returns></returns>
         public static double ObjToDouble(this object thisValue, double errorValue)
         {
+            if (thisValue == null)
+            {
+                return errorValue;
+            }
             if (string.IsNullOrEmpty(thisValue.ToString()))
             {
                 return 0;
@@ -120,6 +128,10 @@ namespace ModernWMS.Core.Utility
         /// <returns></returns>
         public static decimal ObjToDecimal(this object thisValue)
         {
+            if (thisValue == null)
+            {
+                return 0;
+            }
             if (string.IsNullOrEmpty(thisValue.ToString()))
             {
                 return 0;
@@ -138,6 +150,10 @@ namespace ModernWMS.Core.Utility
         /// <returns></returns>
         public static decimal ObjToDecimal(this object thisValue, decimal errorValue)
         {
+            if (thisValue == null)
+            {
+                return errorValue;
+            }
             if (string.IsNullOrEmpty(thisValue.ToString()))
             {
                 return 0;

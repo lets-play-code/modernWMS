@@ -10,6 +10,7 @@ public sealed class DomainSpecRegistry
     {
         Register(new WarehouseAndSkuSpec());
         Register(new AvailableStockSpec());
+        Register(new UnloadedAsnSpec());
         Register(new SortedAsnSpec());
         Register(new LockedDispatchlistSpec());
         Register(new StockFreezeTaskSpec());

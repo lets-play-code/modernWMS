@@ -10,6 +10,7 @@ public sealed class DomainRepositoryRegistry
     {
         Register(new MasterDataSkeletonRepository());
         Register(new StockViewRepository());
+        Register(new StockLayerRepository());
         Register(new AsnRepository());
         Register(new AsnSortRepository());
         Register(new DispatchlistRepository());

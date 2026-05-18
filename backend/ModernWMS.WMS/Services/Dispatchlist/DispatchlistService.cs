@@ -1475,7 +1475,7 @@ namespace ModernWMS.WMS.Services
             var now_time = DateTime.Now;
             foreach (var entity in entities)
             {
-                var vm = viewModels.FirstOrDefault(t => t.id == t.id && t.dispatch_status == entity.dispatch_status);
+                var vm = viewModels.FirstOrDefault(t => t.id == entity.id && t.dispatch_status == entity.dispatch_status);
                 if (vm == null)
                 {
                     return (false, "[202]" + _stringLocalizer["data_changed"]);

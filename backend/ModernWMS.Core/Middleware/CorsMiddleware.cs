@@ -45,7 +45,7 @@ namespace ModernWMS.Core.Middleware
                 httpContext.Response.StatusCode = StatusCodes.Status200OK;
                 return Task.CompletedTask;
             }
-            if (httpContext.Request.Headers["Origin"] != "")
+            if (!string.IsNullOrEmpty(httpContext.Request.Headers["Origin"]))
             {
                 httpContext.Response.Headers.Add("Access-Control-Allow-Origin", httpContext.Request.Headers["Origin"]);
             }
