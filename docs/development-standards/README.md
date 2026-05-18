@@ -6,6 +6,7 @@
 
 - `frontend-conventions.md`：前端目录结构、API 封装、页面骨架、权限接入、i18n 与代码风格约定
 - `backend-conventions.md`：后端分层、控制器 / 服务职责、分页搜索、租户、日志与接口契约约定
+- `testing-conventions.md`：测试分层、API E2E / BDD DSL、测试数据准备、结构化断言与覆盖率约定
 - `frontend-backend-conventions.md`：前后端规范导览页，兼容旧链接并指向拆分后的专题文档
 
 ## 建议放置的内容
