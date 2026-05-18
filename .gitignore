@@ -147,6 +147,15 @@ coverage*.json
 coverage*.xml
 coverage*.info
 
+# Playwright
+playwright-report/
+test-results/
+frontend/e2e/playwright-report/
+frontend/test-results/
+
+# Reqnroll generated feature code-behind
+*.feature.cs
+
 # Visual Studio code coverage results
 *.coverage
 *.coveragexml

@@ -432,3 +432,65 @@ Support/
 | `那么所有"模型"应为` | 模型查询 + Object Pattern 结构化断言 |
 | DAL 表达式 | ModernWMS 自研轻量 Object Pattern 断言，支持字段路径、通配符、数组和正则 |
 | Feature 中只覆盖关键字段 | 规格默认值补齐支持数据，测试正文保留关键字段 |
+
+---
+
+## 10. 测试运行命令
+
+### 10.1 后端构建
+
+```bash
+cd backend
+dotnet build ModernWMS.sln
+```
+
+### 10.2 后端测试与覆盖率
+
+```bash
+cd backend
+dotnet test ModernWMS.sln --collect:"XPlat Code Coverage" --settings coverlet.runsettings
+```
+
+覆盖率检查：
+
+```bash
+python3 ../scripts/check-dotnet-coverage.py \
+  $(find . -path '*/TestResults/*/coverage.cobertura.xml' -type f -print | sort) \
+  --threshold 0.80
+```
+
+说明：
+
+- 长期目标仍为 `ModernWMS.Core + ModernWMS.WMS` 后端覆盖率高于 80%。
+- 当前第一批测试保护已经建立 API E2E、后端测试、UI E2E 和覆盖率统计链路，但覆盖率尚未达到 80%。
+- 在覆盖率补充任务完成前，允许通过环境变量临时降低本地全量脚本门槛，例如：
+
+```bash
+MODERNWMS_COVERAGE_THRESHOLD=0.30 ./scripts/test-all.sh
+```
+
+该临时门槛只用于阶段性验证测试基础设施可运行，不能替代长期 80% 覆盖率验收。
+
+### 10.3 UI E2E
+
+UI E2E 需要真实前端、后端和数据库。优先通过仓库脚本启动完整系统：
+
+```bash
+./scripts/macos-dev.sh start
+cd frontend
+COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e
+cd ..
+./scripts/macos-dev.sh stop
+```
+
+### 10.4 全量脚本
+
+```bash
+./scripts/test-all.sh
+```
+
+常用环境变量：
+
+- `MODERNWMS_COVERAGE_THRESHOLD`：覆盖率阈值，默认 `0.80`。
+- `DOTNET_ROLL_FORWARD`：默认由脚本设为 `Major`，用于本机只有 .NET 8 runtime 时运行 `net7.0` 测试项目。
+

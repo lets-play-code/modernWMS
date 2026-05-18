@@ -231,7 +231,7 @@ install_frontend_dependencies() {
   info "Installing frontend dependencies with Yarn Classic (lockfile stays unchanged)..."
   (
     cd "$FRONTEND_DIR"
-    COREPACK_ENABLE_AUTO_PIN=0 yarn install --ignore-engines --frozen-lockfile
+    COREPACK_ENABLE_AUTO_PIN=0 corepack yarn install --ignore-engines --frozen-lockfile
   )
 }
 
@@ -241,14 +241,14 @@ start_backend() {
   local mysql_conn
 
   mysql_conn="$(mysql_connection_string)"
-  backend_command="env Database__db=MySql ConnectionStrings__MySqlConn=$(shell_quote "$mysql_conn") dotnet run --urls $(shell_quote "$backend_url") > $(shell_quote "$BACKEND_LOG") 2>&1"
+  backend_command="env DOTNET_ROLL_FORWARD=$(shell_quote "${DOTNET_ROLL_FORWARD:-Major}") Database__db=MySql ConnectionStrings__MySqlConn=$(shell_quote "$mysql_conn") dotnet run --urls $(shell_quote "$backend_url") > $(shell_quote "$BACKEND_LOG") 2>&1"
   run_tmux_session "$BACKEND_SESSION" "$BACKEND_DIR" "$backend_command"
 }
 
 start_frontend() {
   local frontend_command
 
-  frontend_command="env COREPACK_ENABLE_AUTO_PIN=0 VITE_BASE_PATH=$(shell_quote "http://$HOST") VITE_SERVER_PORT=$(shell_quote "$BACKEND_PORT") yarn dev --host $(shell_quote "$HOST") --port $(shell_quote "$FRONTEND_PORT") --strictPort > $(shell_quote "$FRONTEND_LOG") 2>&1"
+  frontend_command="env COREPACK_ENABLE_AUTO_PIN=0 VITE_BASE_PATH=$(shell_quote "http://$HOST") VITE_SERVER_PORT=$(shell_quote "$BACKEND_PORT") corepack yarn dev --host $(shell_quote "$HOST") --port $(shell_quote "$FRONTEND_PORT") --strictPort > $(shell_quote "$FRONTEND_LOG") 2>&1"
   run_tmux_session "$FRONTEND_SESSION" "$FRONTEND_DIR" "$frontend_command"
 }
 
