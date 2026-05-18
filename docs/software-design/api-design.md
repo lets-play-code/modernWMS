@@ -20,7 +20,9 @@
 
 相关文档：
 - 业务上下文：`../domain-model/bounded-contexts.md`
-- 前后端编码惯例：`../development-standards/frontend-backend-conventions.md`
+- 前端开发规范：`../development-standards/frontend-conventions.md`
+- 后端开发规范：`../development-standards/backend-conventions.md`
+- 页面风格规范：`./ui-ux-style-guide.md`
 
 ---
 
@@ -510,7 +512,10 @@ Swagger 也不是按版本号分组，而是按业务分组：
 9. 列表页导出统一走 `exportData()`
 10. 搜索自动触发优先使用 debounce watch
 
-更细的开发规范见：`../development-standards/frontend-backend-conventions.md`
+更细的开发规范见：
+- `../development-standards/frontend-conventions.md`
+- `../development-standards/backend-conventions.md`
+- `./ui-ux-style-guide.md`
 
 ---
 
