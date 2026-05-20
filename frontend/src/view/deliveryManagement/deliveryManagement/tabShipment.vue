@@ -103,7 +103,7 @@
               :disabled="!data.authorityList.includes('picked-confirm') || row.dispatch_status !== 2"
               :flat="true"
               icon="mdi-cart-arrow-down"
-              :tooltip-text="$t('wms.deliveryManagement.confirmPicking')"
+              :tooltip-text="$t('wms.deliveryManagement.reviewPickingFallback')"
               @click="method.confirmPicking(row)"
             ></tooltip-btn>
             <tooltip-btn
@@ -174,7 +174,7 @@ import { computedCardHeight, computedTableHeight, errorColor } from '@/constant/
 import { DeliveryManagementVO } from '@/types/DeliveryManagement/DeliveryManagement'
 import { PAGE_SIZE, PAGE_LAYOUT, DEFAULT_PAGE_SIZE } from '@/constant/vxeTable'
 import { hookComponent } from '@/components/system'
-import { getShipment, delShipment, cancelOrderByDispatch, confirmPicking } from '@/api/wms/deliveryManagement'
+import { getShipment, delShipment, cancelOrderByDispatch, reviewPickingByDispatch } from '@/api/wms/deliveryManagement'
 import tooltipBtn from '@/components/tooltip-btn.vue'
 import i18n from '@/languages/i18n'
 import addOrUpdateShipment from './add-or-update-shipment.vue'
@@ -299,13 +299,13 @@ const method = reactive({
   closeDeliveredDetail: () => {
     data.showDeliveredMainDetail = false
   },
-  // Confirm picking
+  // Review picking by dispatch (legacy fallback)
   confirmPicking: async (row: DeliveryManagementVO) => {
     hookComponent.$dialog({
-      content: `${ i18n.global.t('wms.deliveryManagement.confirmPicking') }?`,
+      content: `${ i18n.global.t('wms.deliveryManagement.reviewPickingFallback') }?`,
       handleConfirm: async () => {
         if (row.dispatch_no) {
-          const { data: res } = await confirmPicking(row.dispatch_no)
+          const { data: res } = await reviewPickingByDispatch(row.dispatch_no)
           if (!res.isSuccess) {
             // 2023-12-06 Add automatic refresh of expired data
             if (httpCodeJudge(res.errorMessage)) {

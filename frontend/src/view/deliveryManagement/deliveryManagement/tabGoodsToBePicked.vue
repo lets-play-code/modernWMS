@@ -1,16 +1,22 @@
 <template>
   <div class="operateArea">
     <v-row no-gutters>
-      <!-- Operate Btn -->
-      <v-col cols="3" class="col">
-        <!-- <tooltip-btn icon="mdi-refresh" :tooltip-text="$t('system.page.refresh')" @click="method.refresh"></tooltip-btn>
-        <tooltip-btn icon="mdi-export-variant" :tooltip-text="$t('system.page.export')" @click="method.exportTable"> </tooltip-btn> -->
-
+      <v-col cols="5" class="col">
         <BtnGroup :authority-list="data.authorityList" :btn-list="data.btnList" />
+        <v-btn
+          data-testid="open-picking-sheet-button"
+          class="ml-2"
+          color="primary"
+          variant="text"
+          prepend-icon="mdi-format-list-bulleted-square"
+          :disabled="!data.authorityList.includes('picked-pick')"
+          @click="method.openPickingSheet"
+        >
+          {{ $t('wms.deliveryManagement.generatePickingSheet') }}
+        </v-btn>
       </v-col>
 
-      <!-- Search Input -->
-      <v-col cols="9">
+      <v-col cols="7">
         <v-row no-gutters @keyup.enter="method.sureSearch">
           <v-col cols="4">
             <v-text-field
@@ -21,8 +27,7 @@
               class="searchInput ml-5 mt-1"
               :label="$t('wms.deliveryManagement.dispatch_no')"
               variant="solo"
-            >
-            </v-text-field>
+            />
           </v-col>
           <v-col cols="4">
             <v-text-field
@@ -33,8 +38,7 @@
               class="searchInput ml-5 mt-1"
               :label="$t('wms.deliveryManagement.customer_name')"
               variant="solo"
-            >
-            </v-text-field>
+            />
           </v-col>
           <v-col cols="4">
             <v-text-field
@@ -45,27 +49,38 @@
               class="searchInput ml-5 mt-1"
               :label="$t('wms.deliveryManagement.spu_name')"
               variant="solo"
-            >
-            </v-text-field>
+            />
           </v-col>
         </v-row>
       </v-col>
     </v-row>
   </div>
 
-  <!-- Table -->
   <div
     class="mt-5"
     :style="{
       height: cardHeight
     }"
   >
-    <vxe-table ref="xTable" :column-config="{ minWidth: '100px' }" :data="data.tableData" :height="tableHeight" align="center">
+    <vxe-table
+      ref="xTable"
+      data-testid="goods-to-be-picked-table"
+      :column-config="{ minWidth: '100px' }"
+      :data="data.tableData"
+      :height="tableHeight"
+      align="center"
+    >
       <template #empty>
         {{ i18n.global.t('system.page.noData') }}
       </template>
+      <vxe-column field="selected" width="70" fixed="left" :title="$t('wms.deliveryManagement.select')">
+        <template #default="{ row }">
+          <div class="selectionCell" :data-testid="`goods-to-be-picked-select-${row.id}`" @click.stop="method.toggleSelected(row.id)">
+            <CustomCheckbox :value="method.isSelected(row.id)" />
+          </div>
+        </template>
+      </vxe-column>
       <vxe-column type="seq" width="60"></vxe-column>
-      <!-- <vxe-column type="checkbox" width="50"></vxe-column> -->
       <vxe-column field="dispatch_no" :title="$t('wms.deliveryManagement.dispatch_no')"></vxe-column>
       <vxe-column field="spu_code" :title="$t('wms.deliveryManagement.spu_code')"></vxe-column>
       <vxe-column field="spu_description" width="200px" :title="$t('wms.deliveryManagement.spu_description')"></vxe-column>
@@ -115,12 +130,19 @@
       @page-change="method.handlePageChange"
     >
     </custom-pager>
+
     <SearchDeliveredDetail :id="data.showDeliveredDetailID" :show-dialog="data.showDeliveredDetail" @close="method.closeDeliveredDetail" />
+    <PickingSheetDialog
+      :show-dialog="data.showPickingSheetDialog"
+      :dispatchlist-ids="data.selectedDispatchIds"
+      @close="method.closePickingSheetDialog"
+      @updated="method.handlePickingSheetUpdated"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, reactive, watch, onMounted, nextTick } from 'vue'
+import { computed, onMounted, reactive, ref, watch, nextTick } from 'vue'
 import { VxePagerEvents } from 'vxe-table'
 import { computedCardHeight, computedTableHeight } from '@/constant/style'
 import { DeliveryManagementDetailVO } from '@/types/DeliveryManagement/DeliveryManagement'
@@ -137,31 +159,30 @@ import SearchDeliveredDetail from './search-delivered-detail.vue'
 import { exportData } from '@/utils/exportTable'
 import { DEBOUNCE_TIME } from '@/constant/system'
 import BtnGroup from '@/components/system/btnGroup.vue'
+import CustomCheckbox from '@/components/custom-checkbox.vue'
+import PickingSheetDialog from './picking-sheet-dialog.vue'
 
 const xTable = ref()
 
 const data = reactive({
   showDeliveredDetailID: 0,
   showDeliveredDetail: false,
-  dialogForm: {
-    id: 0
-  },
+  showPickingSheetDialog: false,
   searchForm: {
     dispatch_no: '',
     customer_name: '',
     spu_name: ''
   },
   timer: ref<any>(null),
-  activeTab: null,
-  tableData: ref<DeliveryManagementDetailVO[]>([]),
-  tablePage: ref<TablePage>({
+  tableData: [] as DeliveryManagementDetailVO[],
+  tablePage: {
     total: 0,
     pageIndex: 1,
     pageSize: DEFAULT_PAGE_SIZE,
     searchObjects: []
-  }),
+  } as TablePage,
+  selectedDispatchIds: [] as number[],
   btnList: [] as btnGroupItem[],
-  // Menu operation permissions
   authorityList: getMenuAuthorityList()
 })
 
@@ -169,11 +190,37 @@ const method = reactive({
   closeDeliveredDetail: () => {
     data.showDeliveredDetail = false
   },
+  closePickingSheetDialog: () => {
+    data.showPickingSheetDialog = false
+  },
+  handlePickingSheetUpdated: async () => {
+    await method.getGoodsToBePicked()
+  },
+  isSelected: (dispatchId: number) => data.selectedDispatchIds.includes(dispatchId),
+  toggleSelected: (dispatchId: number, checked?: boolean) => {
+    const shouldSelect = checked ?? !method.isSelected(dispatchId)
+    if (shouldSelect) {
+      if (!method.isSelected(dispatchId)) {
+        data.selectedDispatchIds.push(dispatchId)
+      }
+      return
+    }
+    data.selectedDispatchIds = data.selectedDispatchIds.filter((id) => id !== dispatchId)
+  },
+  openPickingSheet: () => {
+    if (data.selectedDispatchIds.length <= 0) {
+      hookComponent.$message({
+        type: 'error',
+        content: i18n.global.t('wms.deliveryManagement.opeartionCheckboxIsNull')
+      })
+      return
+    }
+    data.showPickingSheetDialog = true
+  },
   viewRow: (row: DeliveryManagementDetailVO) => {
     data.showDeliveredDetailID = row.id
     data.showDeliveredDetail = true
   },
-  // Refresh data
   refresh: () => {
     method.getGoodsToBePicked()
   },
@@ -188,11 +235,11 @@ const method = reactive({
     }
     data.tableData = res.data.rows
     data.tablePage.total = res.data.totals
+    data.selectedDispatchIds = data.selectedDispatchIds.filter((id) => data.tableData.some((row) => row.id === id))
   },
   handlePageChange: ref<VxePagerEvents.PageChange>(({ currentPage, pageSize }) => {
     data.tablePage.pageIndex = currentPage
     data.tablePage.pageSize = pageSize
-
     method.getGoodsToBePicked()
   }),
   exportTable: () => {
@@ -201,12 +248,10 @@ const method = reactive({
       table: $table,
       filename: i18n.global.t('wms.deliveryManagement.goodsToBePicked'),
       columnFilterMethod({ column }: any) {
-        return !['checkbox'].includes(column?.type) && !['operate'].includes(column?.field)
+        return !['operate', 'selected'].includes(column?.field)
       }
     })
   },
-
-  // Export all
   exportAll: async () => {
     try {
       const params = {
@@ -238,7 +283,6 @@ const method = reactive({
       })
     }
   },
-
   sureSearch: () => {
     data.tablePage.searchObjects = setSearchObject(data.searchForm)
     method.getGoodsToBePicked()
@@ -274,7 +318,6 @@ const tableHeight = computed(() => computedTableHeight({}))
 watch(
   () => data.searchForm,
   () => {
-    // debounce
     if (data.timer) {
       clearTimeout(data.timer)
     }
@@ -306,5 +349,10 @@ defineExpose({
 .col {
   display: flex;
   align-items: center;
+}
+
+.selectionCell {
+  display: flex;
+  justify-content: center;
 }
 </style>

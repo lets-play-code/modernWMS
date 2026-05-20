@@ -150,6 +150,18 @@ namespace ModernWMS.WMS.Controllers
             var datas = await _dispatchlistService.GetPickListByDispatchID(dispatch_id);
             return ResultModel<List<DispatchpicklistViewModel>>.Success(datas);
         }
+
+        /// <summary>
+        /// get runtime picking sheet
+        /// </summary>
+        /// <param name="viewModel">query args</param>
+        /// <returns></returns>
+        [HttpPost("picking-sheet")]
+        public async Task<ResultModel<DispatchlistPickingSheetViewModel>> GetPickingSheet(DispatchlistPickingSheetQueryViewModel viewModel)
+        {
+            var datas = await _dispatchlistService.GetPickingSheet(viewModel, CurrentUser);
+            return ResultModel<DispatchlistPickingSheetViewModel>.Success(datas);
+        }
         /// <summary>
         /// delete a record
         /// </summary>
@@ -195,6 +207,44 @@ namespace ModernWMS.WMS.Controllers
         public async Task<ResultModel<string>> ConfirmPickByDispatchNo(string dispatch_no)
         {
             var (flag, msg) = await _dispatchlistService.ConfirmPickByDispatchNo(dispatch_no, CurrentUser);
+            if (flag)
+            {
+                return ResultModel<string>.Success(msg);
+            }
+            else
+            {
+                return ResultModel<string>.Error(msg);
+            }
+        }
+
+        /// <summary>
+        /// confirm selected pick items
+        /// </summary>
+        /// <param name="viewModel">operation args</param>
+        /// <returns></returns>
+        [HttpPut("confirm-pick-items")]
+        public async Task<ResultModel<string>> ConfirmPickItems(DispatchlistPickItemsOperationViewModel viewModel)
+        {
+            var (flag, msg) = await _dispatchlistService.ConfirmPickItems(viewModel, CurrentUser);
+            if (flag)
+            {
+                return ResultModel<string>.Success(msg);
+            }
+            else
+            {
+                return ResultModel<string>.Error(msg);
+            }
+        }
+
+        /// <summary>
+        /// revoke selected pick items
+        /// </summary>
+        /// <param name="viewModel">operation args</param>
+        /// <returns></returns>
+        [HttpPut("revoke-pick-items")]
+        public async Task<ResultModel<string>> RevokePickItems(DispatchlistPickItemsOperationViewModel viewModel)
+        {
+            var (flag, msg) = await _dispatchlistService.RevokePickItems(viewModel, CurrentUser);
             if (flag)
             {
                 return ResultModel<string>.Success(msg);

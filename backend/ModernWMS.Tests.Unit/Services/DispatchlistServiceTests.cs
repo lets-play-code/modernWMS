@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using ModernWMS.Core;
 using ModernWMS.Core.DBContext;
 using ModernWMS.Core.DynamicSearch;
+using ModernWMS.Core.JWT;
 using ModernWMS.Core.Models;
 using ModernWMS.Core.Utility;
 using ModernWMS.Tests.Unit.Support;
@@ -104,6 +105,224 @@ public sealed class DispatchlistServiceTests : IClassFixture<AsnServiceTestFixtu
 
         var pickList = await service.GetPickListByDispatchID(seed.DispatchId);
         pickList.Should().ContainSingle(t => t.pick_qty == 8 && t.picked_qty == 0 && t.series_number == seed.SeriesNumber);
+    }
+
+    [Fact]
+    public async Task GetPickingSheetAggregatesSameStockLayerAcrossDispatchesAsync()
+    {
+        var prefix = $"disp-sheet-{Guid.NewGuid():N}"[..20];
+        const string seriesNumber = "SN-SHEET-01";
+        var expiryDate = new DateTime(2026, 12, 31);
+        var putawayDate = new DateTime(2026, 5, 1);
+        const decimal price = 11.5M;
+
+        await using var connection = await _fixture.OpenConnectionAsync();
+        var master = await AsnUnitSeedData.SeedMasterDataAsync(connection, prefix, includeDamageLocation: false);
+
+        await using var seedContext = _fixture.CreateDbContext();
+        var firstDispatch = CreateDispatchEntity($"DP-SHEET-{Guid.NewGuid():N}"[..18], master.SkuId, qty: 3, status: 2, lockQty: 3);
+        var secondDispatch = CreateDispatchEntity($"DP-SHEET-{Guid.NewGuid():N}"[..18], master.SkuId, qty: 5, status: 2, lockQty: 5);
+        seedContext.GetDbSet<DispatchlistEntity>().AddRange(firstDispatch, secondDispatch);
+        await seedContext.SaveChangesAsync();
+
+        var firstPick = CreateDispatchPickEntity(firstDispatch.id, master.GoodsOwnerId, master.NormalLocationId, master.SkuId, 3, 0, seriesNumber, expiryDate, price, putawayDate);
+        var secondPick = CreateDispatchPickEntity(secondDispatch.id, master.GoodsOwnerId, master.NormalLocationId, master.SkuId, 5, 0, seriesNumber, expiryDate, price, putawayDate);
+        seedContext.GetDbSet<DispatchpicklistEntity>().AddRange(firstPick, secondPick);
+        await seedContext.SaveChangesAsync();
+
+        await using var context = _fixture.CreateDbContext();
+        var service = CreateDispatchService(context);
+        var sheet = await service.GetPickingSheet(
+            new DispatchlistPickingSheetQueryViewModel { dispatchlist_ids = new List<int> { firstDispatch.id, secondDispatch.id } },
+            TestCurrentUser.Admin());
+
+        sheet.dispatch_nos.Should().BeEquivalentTo(new[] { firstDispatch.dispatch_no, secondDispatch.dispatch_no });
+        sheet.lines.Should().ContainSingle();
+        sheet.lines[0].group_key.Should().NotBeNullOrWhiteSpace();
+        sheet.lines[0].pick_qty.Should().Be(8);
+        sheet.lines[0].picked_qty.Should().Be(0);
+        sheet.lines[0].pick_detail_ids.Should().BeEquivalentTo(new[] { firstPick.id, secondPick.id });
+        sheet.lines[0].related_dispatches.Should().BeEquivalentTo(
+            new[]
+            {
+                new { dispatch_no = firstDispatch.dispatch_no, dispatchlist_id = firstDispatch.id, pick_qty = 3, picked_qty = 0 },
+                new { dispatch_no = secondDispatch.dispatch_no, dispatchlist_id = secondDispatch.id, pick_qty = 5, picked_qty = 0 }
+            },
+            options => options.WithoutStrictOrdering());
+    }
+
+    [Fact]
+    public async Task GetPickingSheetSplitsDifferentLocationsIntoSeparateLinesAsync()
+    {
+        var prefix = $"disp-sheet-{Guid.NewGuid():N}"[..20];
+        const string seriesNumber = "SN-SHEET-02";
+        var expiryDate = new DateTime(2026, 12, 31);
+        var putawayDate = new DateTime(2026, 5, 1);
+        const decimal price = 11.5M;
+
+        await using var connection = await _fixture.OpenConnectionAsync();
+        var master = await AsnUnitSeedData.SeedMasterDataAsync(connection, prefix, includeDamageLocation: false);
+
+        await using var seedContext = _fixture.CreateDbContext();
+        var primaryLocation = await seedContext.GetDbSet<GoodslocationEntity>().SingleAsync(t => t.id == master.NormalLocationId);
+        var secondaryLocation = CreateSiblingLocation(primaryLocation, $"{primaryLocation.location_name}-ALT");
+        seedContext.GetDbSet<GoodslocationEntity>().Add(secondaryLocation);
+
+        var firstDispatch = CreateDispatchEntity($"DP-SHEET-{Guid.NewGuid():N}"[..18], master.SkuId, qty: 3, status: 2, lockQty: 3);
+        var secondDispatch = CreateDispatchEntity($"DP-SHEET-{Guid.NewGuid():N}"[..18], master.SkuId, qty: 4, status: 2, lockQty: 4);
+        seedContext.GetDbSet<DispatchlistEntity>().AddRange(firstDispatch, secondDispatch);
+        await seedContext.SaveChangesAsync();
+
+        var firstPick = CreateDispatchPickEntity(firstDispatch.id, master.GoodsOwnerId, primaryLocation.id, master.SkuId, 3, 0, seriesNumber, expiryDate, price, putawayDate);
+        var secondPick = CreateDispatchPickEntity(secondDispatch.id, master.GoodsOwnerId, secondaryLocation.id, master.SkuId, 4, 0, seriesNumber, expiryDate, price, putawayDate);
+        seedContext.GetDbSet<DispatchpicklistEntity>().AddRange(firstPick, secondPick);
+        await seedContext.SaveChangesAsync();
+
+        await using var context = _fixture.CreateDbContext();
+        var service = CreateDispatchService(context);
+        var sheet = await service.GetPickingSheet(
+            new DispatchlistPickingSheetQueryViewModel { dispatchlist_ids = new List<int> { firstDispatch.id, secondDispatch.id } },
+            TestCurrentUser.Admin());
+
+        sheet.lines.Should().HaveCount(2);
+
+        var primaryLine = sheet.lines.Single(t => t.location_name == primaryLocation.location_name);
+        primaryLine.pick_qty.Should().Be(3);
+        primaryLine.pick_detail_ids.Should().BeEquivalentTo(new[] { firstPick.id });
+        primaryLine.related_dispatches.Should().ContainSingle(t => t.dispatch_no == firstDispatch.dispatch_no && t.dispatchlist_id == firstDispatch.id && t.pick_qty == 3);
+
+        var secondaryLine = sheet.lines.Single(t => t.location_name == secondaryLocation.location_name);
+        secondaryLine.pick_qty.Should().Be(4);
+        secondaryLine.pick_detail_ids.Should().BeEquivalentTo(new[] { secondPick.id });
+        secondaryLine.related_dispatches.Should().ContainSingle(t => t.dispatch_no == secondDispatch.dispatch_no && t.dispatchlist_id == secondDispatch.id && t.pick_qty == 4);
+    }
+
+    [Fact]
+    public async Task ConfirmPickItemsMarksSelectedDetailsWithPickerAndKeepsDispatchWaitingAsync()
+    {
+        var currentUser = CreateCurrentUser(7, "picker01");
+        var seed = await CreateConfirmedDispatchAsync($"disp-pick-{Guid.NewGuid():N}"[..20], stockQty: 8, dispatchQty: 5);
+
+        await using var context = _fixture.CreateDbContext();
+        var service = CreateDispatchService(context);
+        var pickId = await context.GetDbSet<DispatchpicklistEntity>()
+            .Where(t => t.dispatchlist_id == seed.DispatchId)
+            .Select(t => t.id)
+            .SingleAsync();
+
+        (await service.ConfirmPickItems(new DispatchlistPickItemsOperationViewModel { pick_detail_ids = new List<int> { pickId } }, currentUser)).flag.Should().BeTrue();
+
+        await using var verifyContext = _fixture.CreateDbContext();
+        var dispatch = await verifyContext.GetDbSet<DispatchlistEntity>().SingleAsync(t => t.id == seed.DispatchId);
+        var pick = await verifyContext.GetDbSet<DispatchpicklistEntity>().SingleAsync(t => t.id == pickId);
+        dispatch.dispatch_status.Should().Be(2);
+        dispatch.picked_qty.Should().Be(0);
+        pick.picked_qty.Should().Be(pick.pick_qty);
+        pick.picker_id.Should().Be(currentUser.user_id);
+        pick.picker.Should().Be(currentUser.user_name);
+
+        var pickList = await CreateDispatchService(verifyContext).GetPickListByDispatchID(seed.DispatchId);
+        pickList.Should().ContainSingle(t => t.id == pickId && t.picker_id == currentUser.user_id && t.picker == currentUser.user_name);
+    }
+
+    [Fact]
+    public async Task RevokePickItemsClearsPickerAndKeepsDispatchWaitingAsync()
+    {
+        var currentUser = CreateCurrentUser(7, "picker01");
+        var seed = await CreateConfirmedDispatchAsync($"disp-pick-{Guid.NewGuid():N}"[..20], stockQty: 8, dispatchQty: 5);
+        int pickId;
+
+        await using (var confirmContext = _fixture.CreateDbContext())
+        {
+            var confirmService = CreateDispatchService(confirmContext);
+            pickId = await confirmContext.GetDbSet<DispatchpicklistEntity>()
+                .Where(t => t.dispatchlist_id == seed.DispatchId)
+                .Select(t => t.id)
+                .SingleAsync();
+            (await confirmService.ConfirmPickItems(new DispatchlistPickItemsOperationViewModel { pick_detail_ids = new List<int> { pickId } }, currentUser)).flag.Should().BeTrue();
+        }
+
+        await using (var revokeContext = _fixture.CreateDbContext())
+        {
+            var revokeService = CreateDispatchService(revokeContext);
+            (await revokeService.RevokePickItems(new DispatchlistPickItemsOperationViewModel { pick_detail_ids = new List<int> { pickId } }, currentUser)).flag.Should().BeTrue();
+        }
+
+        await using var verifyContext = _fixture.CreateDbContext();
+        var dispatch = await verifyContext.GetDbSet<DispatchlistEntity>().SingleAsync(t => t.id == seed.DispatchId);
+        var pick = await verifyContext.GetDbSet<DispatchpicklistEntity>().SingleAsync(t => t.id == pickId);
+        dispatch.dispatch_status.Should().Be(2);
+        dispatch.picked_qty.Should().Be(0);
+        pick.picked_qty.Should().Be(0);
+        pick.picker_id.Should().Be(0);
+        pick.picker.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ConfirmPickByDispatchNoRecordsCheckerAndOnlyAutofillsUnconfirmedRowsAsync()
+    {
+        var prefix = $"disp-check-{Guid.NewGuid():N}"[..20];
+        var picker = CreateCurrentUser(7, "picker01");
+        var checker = CreateCurrentUser(9, "checker01");
+        var expiryDate = new DateTime(2026, 12, 31);
+        var putawayDate = new DateTime(2026, 5, 1);
+        const decimal price = 11.5M;
+
+        await using var connection = await _fixture.OpenConnectionAsync();
+        var master = await AsnUnitSeedData.SeedMasterDataAsync(connection, prefix, includeDamageLocation: false);
+
+        await using var seedContext = _fixture.CreateDbContext();
+        var dispatch = CreateDispatchEntity($"DP-CHECK-{Guid.NewGuid():N}"[..18], master.SkuId, qty: 8, status: 2, lockQty: 8);
+        seedContext.GetDbSet<DispatchlistEntity>().Add(dispatch);
+        await seedContext.SaveChangesAsync();
+
+        var confirmedPick = CreateDispatchPickEntity(dispatch.id, master.GoodsOwnerId, master.NormalLocationId, master.SkuId, 3, 3, "SN-CHECK-01", expiryDate, price, putawayDate);
+        confirmedPick.picker_id = picker.user_id;
+        confirmedPick.picker = picker.user_name;
+        var pendingPick = CreateDispatchPickEntity(dispatch.id, master.GoodsOwnerId, master.NormalLocationId, master.SkuId, 5, 0, "SN-CHECK-02", expiryDate, price, putawayDate);
+        seedContext.GetDbSet<DispatchpicklistEntity>().AddRange(confirmedPick, pendingPick);
+        await seedContext.SaveChangesAsync();
+
+        await using var context = _fixture.CreateDbContext();
+        var service = CreateDispatchService(context);
+        (await service.ConfirmPickByDispatchNo(dispatch.dispatch_no, checker)).flag.Should().BeTrue();
+
+        await using var verifyContext = _fixture.CreateDbContext();
+        var dispatchAfter = await verifyContext.GetDbSet<DispatchlistEntity>().SingleAsync(t => t.id == dispatch.id);
+        var picksAfter = await verifyContext.GetDbSet<DispatchpicklistEntity>()
+            .Where(t => t.dispatchlist_id == dispatch.id)
+            .OrderBy(t => t.id)
+            .ToListAsync();
+
+        dispatchAfter.dispatch_status.Should().Be(3);
+        dispatchAfter.picked_qty.Should().Be(8);
+        dispatchAfter.pick_checker_id.Should().Be(checker.user_id);
+        dispatchAfter.pick_checker.Should().Be(checker.user_name);
+        picksAfter.Should().ContainSingle(t => t.pick_qty == 3 && t.picked_qty == 3 && t.picker_id == picker.user_id && t.picker == picker.user_name);
+        picksAfter.Should().ContainSingle(t => t.pick_qty == 5 && t.picked_qty == 5 && t.picker_id == checker.user_id && t.picker == checker.user_name);
+    }
+
+    [Fact]
+    public async Task ConfirmPickByDispatchNoStillSupportsDirectReviewFallbackAsync()
+    {
+        var checker = CreateCurrentUser(9, "checker01");
+        var seed = await CreateConfirmedDispatchAsync($"disp-check-{Guid.NewGuid():N}"[..20], stockQty: 8, dispatchQty: 5);
+
+        await using var context = _fixture.CreateDbContext();
+        var service = CreateDispatchService(context);
+        (await service.ConfirmPickByDispatchNo(seed.DispatchNo, checker)).flag.Should().BeTrue();
+
+        await using var verifyContext = _fixture.CreateDbContext();
+        var dispatch = await verifyContext.GetDbSet<DispatchlistEntity>().SingleAsync(t => t.id == seed.DispatchId);
+        var pick = await verifyContext.GetDbSet<DispatchpicklistEntity>().SingleAsync(t => t.dispatchlist_id == seed.DispatchId);
+
+        dispatch.dispatch_status.Should().Be(3);
+        dispatch.picked_qty.Should().Be(5);
+        dispatch.pick_checker_id.Should().Be(checker.user_id);
+        dispatch.pick_checker.Should().Be(checker.user_name);
+        pick.picked_qty.Should().Be(pick.pick_qty);
+        pick.picker_id.Should().Be(checker.user_id);
+        pick.picker.Should().Be(checker.user_name);
     }
 
     [Fact]
@@ -463,6 +682,64 @@ public sealed class DispatchlistServiceTests : IClassFixture<AsnServiceTestFixtu
                     Value = value
                 }
             }
+        };
+    }
+
+    private static CurrentUser CreateCurrentUser(int userId, string userName, long tenantId = 1)
+    {
+        return new CurrentUser
+        {
+            user_id = userId,
+            user_num = userName,
+            user_name = userName,
+            user_role = "administrator",
+            tenant_id = tenantId
+        };
+    }
+
+    private static DispatchpicklistEntity CreateDispatchPickEntity(
+        int dispatchId,
+        int goodsOwnerId,
+        int locationId,
+        int skuId,
+        int pickQty,
+        int pickedQty,
+        string seriesNumber,
+        DateTime expiryDate,
+        decimal price,
+        DateTime putawayDate)
+    {
+        return new DispatchpicklistEntity
+        {
+            dispatchlist_id = dispatchId,
+            goods_owner_id = goodsOwnerId,
+            goods_location_id = locationId,
+            sku_id = skuId,
+            pick_qty = pickQty,
+            picked_qty = pickedQty,
+            is_update_stock = false,
+            last_update_time = DateTime.Now,
+            series_number = seriesNumber,
+            expiry_date = expiryDate,
+            price = price,
+            putaway_date = putawayDate
+        };
+    }
+
+    private static GoodslocationEntity CreateSiblingLocation(GoodslocationEntity source, string locationName)
+    {
+        return new GoodslocationEntity
+        {
+            warehouse_id = source.warehouse_id,
+            warehouse_name = source.warehouse_name,
+            warehouse_area_id = source.warehouse_area_id,
+            warehouse_area_name = source.warehouse_area_name,
+            warehouse_area_property = source.warehouse_area_property,
+            location_name = locationName,
+            create_time = DateTime.Now,
+            last_update_time = DateTime.Now,
+            is_valid = true,
+            tenant_id = source.tenant_id
         };
     }
 

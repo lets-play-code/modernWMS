@@ -8,7 +8,9 @@ import {
   DeliveryVO,
   SignInVO,
   CancleOrderVO,
-  SetCarrierVO
+  SetCarrierVO,
+  PickingSheetQueryVO,
+  PickItemsOperationVO
 } from '@/types/DeliveryManagement/DeliveryManagement'
 
 // Get Pre shipment
@@ -162,14 +164,38 @@ export const confirmOrder = (data: ConfirmOrderVO[]) => http({
     data
   })
 
-// Confirm picking
-export const confirmPicking = (dispatch_no: string) => http({
+// Get runtime picking sheet
+export const getPickingSheet = (data: PickingSheetQueryVO) => http({
+    url: '/dispatchlist/picking-sheet',
+    method: 'post',
+    data
+  })
+
+// Confirm selected pick items
+export const confirmPickItems = (data: PickItemsOperationVO) => http({
+    url: '/dispatchlist/confirm-pick-items',
+    method: 'put',
+    data
+  })
+
+// Revoke selected pick items
+export const revokePickItems = (data: PickItemsOperationVO) => http({
+    url: '/dispatchlist/revoke-pick-items',
+    method: 'put',
+    data
+  })
+
+// Review picking by dispatch no
+export const reviewPickingByDispatch = (dispatch_no: string) => http({
     url: '/dispatchlist/confirm-pick-dispatchlistno',
     method: 'put',
     params: {
       dispatch_no
     }
   })
+
+// Confirm picking (legacy alias)
+export const confirmPicking = reviewPickingByDispatch
 
 // Pack
 export const handlePackage = (data: PackageVO[]) => http({

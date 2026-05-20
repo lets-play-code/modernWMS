@@ -378,6 +378,41 @@ Swagger 也不是按版本号分组，而是按业务分组：
 - 前端 API 封装与页面调用应保证 `request.ts` 能拿到可解析的 `url / method / data`
 - 如果希望操作日志更可读，应同步补 `frontend/src/utils/systemLog.ts`
 
+### 3.10 出库拣货增强接口约定
+
+当前 `deliveryManagement` 中的拣货增强遵循“**运行时拣货单视图 + 行级执行命令 + 整单复核命令**”三层分工：
+
+1. **运行时拣货单视图**
+   - `POST /dispatchlist/picking-sheet`
+   - 请求体：`{ dispatchlist_ids: number[] }`
+   - 只聚合父 `dispatchlist.dispatch_status = 2` 的 `dispatchpicklist`
+   - 返回 `dispatch_nos + lines`
+   - `lines[*].group_key` 只是前端渲染用的响应字段，不是持久化业务编号
+   - 聚合键固定为：`sku_id`、`goods_location_id`、`goods_owner_id`、`series_number`、`expiry_date`、`price`、`putaway_date`
+
+2. **行级拣货执行命令**
+   - `PUT /dispatchlist/confirm-pick-items`
+   - `PUT /dispatchlist/revoke-pick-items`
+   - 请求体统一为：`{ pick_detail_ids: number[] }`
+   - 只允许操作父发货明细仍处于 `dispatch_status = 2` 的记录
+   - 这两个命令只修改 `DispatchpicklistEntity`，不推进 `DispatchlistEntity.dispatch_status`
+   - `GET /dispatchlist/pick-list?dispatch_id=...` 会返回 `picker / picker_id`，供详情弹窗查看现场执行人
+
+3. **整单复核 / 旧流程兼容命令**
+   - `PUT /dispatchlist/confirm-pick-dispatchlistno?dispatch_no=...`
+   - 语义不是“逐条拣货确认”，而是“整单复核并放行到已拣货”
+   - 它会自动补齐未确认的 `DispatchpicklistEntity`，并写入：
+     - 行级 `picker / picker_id`（仅在原明细还没有执行人时补齐）
+     - 整单 `pick_checker / pick_checker_id`
+   - 然后把对应 `DispatchlistEntity.dispatch_status` 从 `2` 推进到 `3`
+   - 该接口保留了旧的“直接整单推进”路径，但库存扣减时机仍然保持在 `Delivery()`
+
+前端协作上的稳定约定是：
+
+- 待拣货页继续沿用原 tab，不新增菜单或新路由；
+- 新增能力优先通过局部对话框承载，而不是引入新的持久化单据页面；
+- `picked-pick`、`picked-revoke`、`picked-confirm` 继续复用为生成/执行/撤销/复核入口。
+
 ---
 
 ## 4. 页面与 API 的协作规范

@@ -25,6 +25,8 @@ public sealed class DispatchlistRepository : DomainRepository
                        dispatchlist.actual_qty,
                        dispatchlist.sign_qty,
                        dispatchlist.damage_qty,
+                       dispatchlist.pick_checker_id,
+                       dispatchlist.pick_checker,
                        dispatchlist.waybill_no,
                        dispatchlist.carrier,
                        dispatchlist.freightfee
@@ -53,6 +55,8 @@ public sealed class DispatchlistRepository : DomainRepository
         ["actual_qty"] = Convert.ToInt64(reader["actual_qty"]),
         ["sign_qty"] = Convert.ToInt64(reader["sign_qty"]),
         ["damage_qty"] = Convert.ToInt64(reader["damage_qty"]),
+        ["pick_checker_id"] = Convert.ToInt64(reader["pick_checker_id"]),
+        ["pick_checker"] = reader.GetString("pick_checker"),
         ["waybill_no"] = reader.GetString("waybill_no"),
         ["carrier"] = reader.GetString("carrier"),
         ["freightfee"] = reader.GetDecimal("freightfee")
@@ -74,6 +78,8 @@ public sealed class DispatchpicklistRepository : DomainRepository
                        sku.sku_code,
                        dispatchpicklist.pick_qty,
                        dispatchpicklist.picked_qty,
+                       dispatchpicklist.picker_id,
+                       dispatchpicklist.picker,
                        dispatchpicklist.is_update_stock,
                        dispatchpicklist.series_number
                 from dispatchpicklist
@@ -92,6 +98,8 @@ public sealed class DispatchpicklistRepository : DomainRepository
                     ["sku_code"] = reader.GetString("sku_code"),
                     ["pick_qty"] = Convert.ToInt64(reader["pick_qty"]),
                     ["picked_qty"] = Convert.ToInt64(reader["picked_qty"]),
+                    ["picker_id"] = Convert.ToInt64(reader["picker_id"]),
+                    ["picker"] = reader.GetString("picker"),
                     ["is_update_stock"] = Convert.ToBoolean(reader["is_update_stock"]),
                     ["series_number"] = reader.GetString("series_number")
                 });

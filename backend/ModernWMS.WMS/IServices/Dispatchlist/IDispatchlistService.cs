@@ -88,6 +88,22 @@ namespace ModernWMS.WMS.IServices
         Task<(bool flag, string msg)> ConfirmPickByDispatchNo(string dispatch_no, CurrentUser currentUser);
 
         /// <summary>
+        /// confirm selected pick items
+        /// </summary>
+        /// <param name="viewModel">operation args</param>
+        /// <param name="currentUser">current user</param>
+        /// <returns></returns>
+        Task<(bool flag, string msg)> ConfirmPickItems(DispatchlistPickItemsOperationViewModel viewModel, CurrentUser currentUser);
+
+        /// <summary>
+        /// revoke selected pick items
+        /// </summary>
+        /// <param name="viewModel">operation args</param>
+        /// <param name="currentUser">current user</param>
+        /// <returns></returns>
+        Task<(bool flag, string msg)> RevokePickItems(DispatchlistPickItemsOperationViewModel viewModel, CurrentUser currentUser);
+
+        /// <summary>
         ///  package
         /// </summary>
         /// <param name="viewModels">viewModels</param>
@@ -134,6 +150,14 @@ namespace ModernWMS.WMS.IServices
         /// <param name="dispatch_id">dispatch_id</param>
         /// <returns></returns>
         Task<List<DispatchpicklistViewModel>> GetPickListByDispatchID(int dispatch_id);
+
+        /// <summary>
+        /// get runtime picking sheet by selected dispatchlist ids
+        /// </summary>
+        /// <param name="viewModel">query args</param>
+        /// <param name="currentUser">current user</param>
+        /// <returns></returns>
+        Task<DispatchlistPickingSheetViewModel> GetPickingSheet(DispatchlistPickingSheetQueryViewModel viewModel, CurrentUser currentUser);
 
         /// <summary>
         ///  cancel order opration 

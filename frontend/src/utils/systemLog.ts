@@ -195,6 +195,12 @@ export function parseOperation(config): string {
         }
     } else if (URL === '/dispatchlist/confirm-order') {
         str = `[确认] 发货单号为${ RES[0].dispatch_no }的商品发货`
+    } else if (URL === '/dispatchlist/picking-sheet') {
+        str = `[生成] 已选${ RES.dispatchlist_ids?.length || 0 }条待拣货任务的运行时拣货单`
+    } else if (URL === '/dispatchlist/confirm-pick-items') {
+        str = `[确认] ${ RES.pick_detail_ids?.length || 0 }条拣货明细`
+    } else if (URL === '/dispatchlist/revoke-pick-items') {
+        str = `[撤销] ${ RES.pick_detail_ids?.length || 0 }条拣货明细`
     } else if (URL === '/dispatchlist/cancel-order') {
         if (RES.dispatch_status === 2) {
             str = `[撤销] 发货单号为${ RES.dispatch_no }的商品发货`
@@ -204,7 +210,7 @@ export function parseOperation(config): string {
             str = `[撤销] 发货单号为${ RES.logTemp }的商品的打包/称重`
         }
     } else if (URL === '/dispatchlist/confirm-pick-dispatchlistno') {
-        str = `[确认] 发货单号为${ RES.dispatch_no }的商品拣货`
+        str = `[复核] 发货单号为${ RES.dispatch_no }的商品拣货`
     } else if (URL === '/dispatchlist/package') {
         const temp = RES.map(item => `发货单号为${ item.dispatch_no }的商品`).join(', ')
         str = `[确认] ${ temp }的打包`

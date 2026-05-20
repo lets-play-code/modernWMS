@@ -58,16 +58,24 @@
    - `ConfirmOrderCheck()` 先计算可用库存
    - `ConfirmOrder()` 创建 `DispatchpicklistEntity`
    - 状态推进到 `2`
-3. **确认拣货**
-   - `ConfirmPickByDispatchNo()` 将 `picked_qty = lock_qty`
-   - 状态推进到 `3`
-4. **打包 / 称重**
+3. **生成运行时拣货单视图**
+   - `GetPickingSheet()` 基于已锁库的 `DispatchpicklistEntity` 生成运行时拣货单
+   - 聚合键遵循库存层身份：`sku_id + goods_location_id + goods_owner_id + series_number + expiry_date + price + putaway_date`
+   - 该拣货单只是执行视图，不生成新的持久化主表、明细表或业务编号
+4. **行级拣货执行 / 撤销**
+   - `ConfirmPickItems()`、`RevokePickItems()` 只更新 `DispatchpicklistEntity`
+   - `DispatchlistEntity.dispatch_status` 仍保持 `2`
+   - `DispatchpicklistEntity.picker / picker_id` 记录谁完成了行级拣货
+5. **整单复核**
+   - `ConfirmPickByDispatchNo()` 的语义是“整单复核 / 旧流程兼容放行”
+   - 它会自动补齐未确认拣货明细、写入 `DispatchlistEntity.pick_checker / pick_checker_id`，并把状态推进到 `3`
+6. **打包 / 称重**
    - `Package()` 维护包裹信息
    - `Weight()` 维护称重信息
-5. **出库**
+7. **出库**
    - `Delivery()` 才是真正扣减库存的动作
    - 同时把 `DispatchpicklistEntity.is_update_stock = true`
-6. **签收**
+8. **签收**
    - `SignForArrival()` 写入 `damage_qty`
    - 计算 `sign_qty = actual_qty - damage_qty`
    - 状态推进到 `7`
@@ -78,7 +86,9 @@
 | --- | --- |
 | `DispatchlistEntity` | 出库明细行，也是主要工作单元 |
 | `dispatch_no` | 逻辑上的发货单号，用来聚合多行明细 |
-| `DispatchpicklistEntity` | 拣货与锁库事实 |
+| `DispatchpicklistEntity` | 拣货与锁库事实，也是行级执行留痕载体 |
+| `Runtime Picking Sheet Line` | 面向现场执行的运行时聚合视图，不是持久化实体 |
+| `Related Dispatch Ref` | 运行时拣货单中“这条聚合拣货项关联了哪些发货单”的拆分信息 |
 | `FreightfeeEntity` | 运费与承运信息 |
 | `StockEntity` | 被锁定和扣减的库存事实 |
 
@@ -92,6 +102,14 @@
   - 真正扣减库存发生在 `Delivery()`，不是在 `ConfirmOrder()`
 - **拣货明细要保留库存层维度**
   - 包括 `goods_location_id`、`goods_owner_id`、`series_number`、`expiry_date`、`price`、`putaway_date`
+- **拣货单是运行时视图，不是新的持久化业务单据**
+  - 只允许按已锁库明细实时聚合，不新增数据库表或持久化编号
+- **行级执行与整单放行分层**
+  - 行级 `ConfirmPickItems()` / `RevokePickItems()` 只修改 `DispatchpicklistEntity`
+  - 整单 `ConfirmPickByDispatchNo()` 才推进 `DispatchlistEntity.dispatch_status = 3`
+- **责任留痕分两层**
+  - `DispatchpicklistEntity.picker / picker_id` 表示谁拣了货
+  - `DispatchlistEntity.pick_checker / pick_checker_id` 表示谁完成了整单复核
 
 ## 8. 上下游与协作
 

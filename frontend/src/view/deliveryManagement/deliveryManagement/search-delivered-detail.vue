@@ -31,8 +31,9 @@
             <vxe-column field="warehouse_name" :title="$t('wms.stockLocation.warehouse_name')"></vxe-column>
             <vxe-column field="warehouse_area_name" :title="$t('base.warehouseSetting.area_name')"></vxe-column>
             <vxe-column field="location_name" :title="$t('base.warehouseSetting.location_name')"></vxe-column>
-            <!-- <vxe-column field="pick_qty" :title="$t('wms.deliveryManagement.unpicked_qty')"></vxe-column> -->
+            <vxe-column field="pick_qty" :title="$t('wms.deliveryManagement.pick_qty')"></vxe-column>
             <vxe-column field="picked_qty" :title="$t('wms.deliveryManagement.picked_qty')"></vxe-column>
+            <vxe-column field="picker" :title="$t('wms.deliveryManagement.picker')"></vxe-column>
           </vxe-table>
         </v-card-text>
         <v-card-actions class="justify-end">
@@ -47,6 +48,7 @@
 import { reactive, computed, watch } from 'vue'
 import { hookComponent } from '@/components/system/index'
 import { viewInventoryDetails } from '@/api/wms/deliveryManagement'
+import { DispatchPickDetailVO } from '@/types/DeliveryManagement/DeliveryManagement'
 import i18n from '@/languages/i18n'
 
 const emit = defineEmits(['close', 'submit'])
@@ -59,7 +61,7 @@ const props = defineProps<{
 const isShow = computed(() => props.showDialog)
 
 const data = reactive({
-  tableData: []
+  tableData: [] as DispatchPickDetailVO[]
 })
 
 const method = reactive({

@@ -149,6 +149,7 @@ namespace ModernWMS.WMS.Services
                             length_unit = spu.length_unit,
                             volume_unit = spu.volume_unit,
                             weight_unit = spu.weight_unit,
+                            pick_checker = d.pick_checker,
                             is_todo = pageSearch.sqlTitle.Contains("dispatch_status") || (pageSearch.sqlTitle.Equals("package") && d.dispatch_status.Equals(4))
                                             || (pageSearch.sqlTitle.Equals("weight") && d.dispatch_status.Equals(5))
                                             || (pageSearch.sqlTitle.Equals("delivery") && d.dispatch_status.Equals(6)) ? false : true,
@@ -228,7 +229,8 @@ namespace ModernWMS.WMS.Services
                                    bar_code = sku.bar_code,
                                    unpicked_qty = d.qty - d.picked_qty,
                                    sku_name = sku.sku_name,
-                                   unit = sku.unit
+                                   unit = sku.unit,
+                                   pick_checker = d.pick_checker
                                }).ToListAsync();
             return datas;
         }
@@ -365,8 +367,65 @@ namespace ModernWMS.WMS.Services
                                    expiry_date = dpl.expiry_date,
                                    price = dpl.price,
                                    putaway_date = dpl.putaway_date,
+                                   picker_id = dpl.picker_id,
+                                   picker = dpl.picker,
                                }).ToListAsync();
             return datas;
+        }
+
+        /// <summary>
+        /// get runtime picking sheet by selected dispatchlist ids
+        /// </summary>
+        /// <param name="viewModel">query args</param>
+        /// <param name="currentUser">current user</param>
+        /// <returns></returns>
+        public async Task<DispatchlistPickingSheetViewModel> GetPickingSheet(DispatchlistPickingSheetQueryViewModel viewModel, CurrentUser currentUser)
+        {
+            var dispatchlistIds = viewModel.dispatchlist_ids.Distinct().Where(t => t > 0).ToList();
+            if (!dispatchlistIds.Any())
+            {
+                return new DispatchlistPickingSheetViewModel();
+            }
+
+            var rows = await (from dpl in _dBContext.GetDbSet<DispatchpicklistEntity>().AsNoTracking()
+                              join dl in _dBContext.GetDbSet<DispatchlistEntity>().AsNoTracking() on dpl.dispatchlist_id equals dl.id
+                              join sku in _dBContext.GetDbSet<SkuEntity>().AsNoTracking() on dpl.sku_id equals sku.id
+                              join spu in _dBContext.GetDbSet<SpuEntity>().AsNoTracking() on sku.spu_id equals spu.id
+                              join owner in _dBContext.GetDbSet<GoodsownerEntity>().AsNoTracking() on dpl.goods_owner_id equals owner.id into owner_left
+                              from owner in owner_left.DefaultIfEmpty()
+                              join location in _dBContext.GetDbSet<GoodslocationEntity>().AsNoTracking() on dpl.goods_location_id equals location.id into location_left
+                              from location in location_left.DefaultIfEmpty()
+                              where dispatchlistIds.Contains(dl.id)
+                                    && dl.dispatch_status == 2
+                                    && dl.tenant_id == currentUser.tenant_id
+                              select new DispatchlistPickingSheetRow
+                              {
+                                  id = dpl.id,
+                                  dispatchlist_id = dl.id,
+                                  dispatch_no = dl.dispatch_no,
+                                  sku_id = dpl.sku_id,
+                                  goods_owner_id = dpl.goods_owner_id,
+                                  goods_location_id = dpl.goods_location_id,
+                                  spu_code = spu.spu_code,
+                                  spu_name = spu.spu_name,
+                                  sku_code = sku.sku_code,
+                                  goods_owner_name = owner == null ? "" : owner.goods_owner_name,
+                                  warehouse_name = location == null ? "" : location.warehouse_name,
+                                  warehouse_area_name = location == null ? "" : location.warehouse_area_name,
+                                  location_name = location == null ? "" : location.location_name,
+                                  series_number = dpl.series_number,
+                                  expiry_date = dpl.expiry_date,
+                                  price = dpl.price,
+                                  putaway_date = dpl.putaway_date,
+                                  pick_qty = dpl.pick_qty,
+                                  picked_qty = dpl.picked_qty
+                              }).ToListAsync();
+
+            return new DispatchlistPickingSheetViewModel
+            {
+                dispatch_nos = rows.Select(t => t.dispatch_no).Distinct().OrderBy(t => t).ToList(),
+                lines = BuildPickingSheetLines(rows)
+            };
         }
 
         /// <summary>
@@ -505,6 +564,8 @@ namespace ModernWMS.WMS.Services
                                   waybill_no = dl.waybill_no,
                                   carrier = dl.carrier,
                                   freightfee = dl.freightfee,
+                                  pick_checker_id = dl.pick_checker_id,
+                                  pick_checker = dl.pick_checker,
                               }
                               ).ToListAsync();
             return data.Adapt<List<DispatchlistDetailViewModel>>();
@@ -1115,11 +1176,18 @@ namespace ModernWMS.WMS.Services
             {
                 t.picked_qty = t.lock_qty;
                 t.dispatch_status = 3;
+                t.pick_checker_id = currentUser.user_id;
+                t.pick_checker = currentUser.user_name;
                 t.last_update_time = now_time;
             });
             pick_datas.ForEach(t =>
             {
                 t.picked_qty = t.pick_qty;
+                if (t.picker_id == 0 || string.IsNullOrWhiteSpace(t.picker))
+                {
+                    t.picker_id = currentUser.user_id;
+                    t.picker = currentUser.user_name;
+                }
                 t.last_update_time = now_time;
             });
             var qty = await _dBContext.SaveChangesAsync();
@@ -1131,6 +1199,78 @@ namespace ModernWMS.WMS.Services
             {
                 return (false, _stringLocalizer["operation_failed"]);
             }
+        }
+
+        /// <summary>
+        /// confirm selected pick items
+        /// </summary>
+        /// <param name="viewModel">operation args</param>
+        /// <param name="currentUser">current user</param>
+        /// <returns></returns>
+        public Task<(bool flag, string msg)> ConfirmPickItems(DispatchlistPickItemsOperationViewModel viewModel, CurrentUser currentUser)
+        {
+            return UpdatePickItems(viewModel, currentUser, (pick, now_time, user) =>
+            {
+                pick.picked_qty = pick.pick_qty;
+                pick.picker_id = user.user_id;
+                pick.picker = user.user_name;
+                pick.last_update_time = now_time;
+            });
+        }
+
+        /// <summary>
+        /// revoke selected pick items
+        /// </summary>
+        /// <param name="viewModel">operation args</param>
+        /// <param name="currentUser">current user</param>
+        /// <returns></returns>
+        public Task<(bool flag, string msg)> RevokePickItems(DispatchlistPickItemsOperationViewModel viewModel, CurrentUser currentUser)
+        {
+            return UpdatePickItems(viewModel, currentUser, (pick, now_time, _) =>
+            {
+                pick.picked_qty = 0;
+                pick.picker_id = 0;
+                pick.picker = string.Empty;
+                pick.last_update_time = now_time;
+            });
+        }
+
+        private async Task<(bool flag, string msg)> UpdatePickItems(
+            DispatchlistPickItemsOperationViewModel viewModel,
+            CurrentUser currentUser,
+            Action<DispatchpicklistEntity, DateTime, CurrentUser> updateAction)
+        {
+            var pickDetailIds = viewModel.pick_detail_ids.Distinct().Where(t => t > 0).ToList();
+            if (!pickDetailIds.Any())
+            {
+                return (false, "[202]" + _stringLocalizer["data_changed"]);
+            }
+
+            var pick_DBSet = _dBContext.GetDbSet<DispatchpicklistEntity>();
+            var picks = await pick_DBSet.Where(t => pickDetailIds.Contains(t.id)).ToListAsync();
+            if (picks.Count != pickDetailIds.Count)
+            {
+                return (false, "[202]" + _stringLocalizer["data_changed"]);
+            }
+
+            var dispatchlist_id_list = picks.Select(t => t.dispatchlist_id).Distinct().ToList();
+            var dispatches = await _dBContext.GetDbSet<DispatchlistEntity>()
+                .Where(t => dispatchlist_id_list.Contains(t.id) && t.tenant_id == currentUser.tenant_id)
+                .ToListAsync();
+            if (dispatches.Count != dispatchlist_id_list.Count || dispatches.Any(t => t.dispatch_status != 2))
+            {
+                return (false, "[202]" + _stringLocalizer["data_changed"]);
+            }
+
+            var now_time = DateTime.Now;
+            picks.ForEach(t => updateAction(t, now_time, currentUser));
+            var qty = await _dBContext.SaveChangesAsync();
+            if (qty > 0)
+            {
+                return (true, _stringLocalizer["operation_success"]);
+            }
+
+            return (false, _stringLocalizer["operation_failed"]);
         }
 
         /// <summary>
@@ -1628,6 +1768,100 @@ namespace ModernWMS.WMS.Services
             }
 
             return code;
+        }
+
+        private static List<DispatchlistPickingSheetLineViewModel> BuildPickingSheetLines(List<DispatchlistPickingSheetRow> rows)
+        {
+            return rows.GroupBy(t => new
+                       {
+                           t.sku_id,
+                           t.goods_owner_id,
+                           t.goods_location_id,
+                           t.spu_code,
+                           t.spu_name,
+                           t.sku_code,
+                           t.goods_owner_name,
+                           t.warehouse_name,
+                           t.warehouse_area_name,
+                           t.location_name,
+                           t.series_number,
+                           t.expiry_date,
+                           t.price,
+                           t.putaway_date
+                       })
+                       .Select(g => new DispatchlistPickingSheetLineViewModel
+                       {
+                           group_key = BuildPickingSheetGroupKey(g.First()),
+                           pick_detail_ids = g.Select(t => t.id).OrderBy(t => t).ToList(),
+                           sku_id = g.Key.sku_id,
+                           goods_owner_id = g.Key.goods_owner_id,
+                           goods_location_id = g.Key.goods_location_id,
+                           spu_code = g.Key.spu_code,
+                           spu_name = g.Key.spu_name,
+                           sku_code = g.Key.sku_code,
+                           goods_owner_name = g.Key.goods_owner_name,
+                           warehouse_name = g.Key.warehouse_name,
+                           warehouse_area_name = g.Key.warehouse_area_name,
+                           location_name = g.Key.location_name,
+                           series_number = g.Key.series_number,
+                           expiry_date = g.Key.expiry_date,
+                           price = g.Key.price,
+                           putaway_date = g.Key.putaway_date,
+                           pick_qty = g.Sum(t => t.pick_qty),
+                           picked_qty = g.Sum(t => t.picked_qty),
+                           related_dispatches = g.GroupBy(t => new { t.dispatch_no, t.dispatchlist_id })
+                                                 .Select(dg => new DispatchlistPickingSheetDispatchRefViewModel
+                                                 {
+                                                     dispatch_no = dg.Key.dispatch_no,
+                                                     dispatchlist_id = dg.Key.dispatchlist_id,
+                                                     pick_qty = dg.Sum(t => t.pick_qty),
+                                                     picked_qty = dg.Sum(t => t.picked_qty)
+                                                 })
+                                                 .OrderBy(t => t.dispatch_no)
+                                                 .ThenBy(t => t.dispatchlist_id)
+                                                 .ToList()
+                       })
+                       .OrderBy(t => t.location_name)
+                       .ThenBy(t => t.sku_code)
+                       .ThenBy(t => t.series_number)
+                       .ToList();
+        }
+
+        private static string BuildPickingSheetGroupKey(DispatchlistPickingSheetRow row)
+        {
+            return string.Join("|", new[]
+            {
+                row.sku_id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                row.goods_location_id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                row.goods_owner_id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                row.series_number,
+                row.expiry_date.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+                row.price.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                row.putaway_date.ToString("O", System.Globalization.CultureInfo.InvariantCulture)
+            });
+        }
+
+        private sealed class DispatchlistPickingSheetRow
+        {
+            public int id { get; set; } = 0;
+            public int dispatchlist_id { get; set; } = 0;
+            public string dispatch_no { get; set; } = string.Empty;
+            public int sku_id { get; set; } = 0;
+            public int goods_owner_id { get; set; } = 0;
+            public int goods_location_id { get; set; } = 0;
+            public string spu_code { get; set; } = string.Empty;
+            public string spu_name { get; set; } = string.Empty;
+            public string sku_code { get; set; } = string.Empty;
+            public string goods_owner_name { get; set; } = string.Empty;
+            public string warehouse_name { get; set; } = string.Empty;
+            public string warehouse_area_name { get; set; } = string.Empty;
+            public string location_name { get; set; } = string.Empty;
+            public string series_number { get; set; } = string.Empty;
+            public DateTime expiry_date { get; set; } = UtilConvert.MinDate;
+            public decimal price { get; set; } = 0;
+            public DateTime putaway_date { get; set; } = UtilConvert.MinDate;
+            public int pick_qty { get; set; } = 0;
+            public int picked_qty { get; set; } = 0;
         }
 
         /// <summary>

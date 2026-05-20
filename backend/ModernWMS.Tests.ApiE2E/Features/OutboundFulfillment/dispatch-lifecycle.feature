@@ -498,3 +498,244 @@
         qty_available: 12
       }]
       """
+
+  场景: 运行时拣货单会按同库存层聚合待拣货明细
+    假如以管理员登录
+    并且存在"可用库存":
+      | warehouse.key | warehouse.name            | area.key | area.name                 | area.property | location.key | location.code               | goods_owner.key | goods_owner.name      | customer.name        | category.name       | spu.key | spu.code             | sku.key | sku.code             | qty | dispatch_no             | dispatch_status | dispatch_qty | dispatch_lock_qty | series_number         | expiry_date | price | putaway_date |
+      | main          | WH-E2E-PICK-SHEET-AGG    | main     | AREA-E2E-PICK-SHEET-AGG   | 1             | main         | LOC-E2E-PICK-SHEET-AGG-01   | main            | 练习货主-PICK-AGG    | 练习客户-PICK-AGG    | 分类-PICK-AGG       | item    | SPU-E2E-PICK-AGG     | item    | SKU-E2E-PICK-AGG     | 12  | DP-E2E-PICK-AGG-01   | 2               | 3            | 3                 | SN-E2E-PICK-AGG-01   | 2026-12-31  | 11.5  | 2026-05-01   |
+      | main          | WH-E2E-PICK-SHEET-AGG    | main     | AREA-E2E-PICK-SHEET-AGG   | 1             | main         | LOC-E2E-PICK-SHEET-AGG-01   | main            | 练习货主-PICK-AGG    | 练习客户-PICK-AGG    | 分类-PICK-AGG       | item    | SPU-E2E-PICK-AGG     | item    | SKU-E2E-PICK-AGG     | 0   | DP-E2E-PICK-AGG-02   | 2               | 5            | 5                 | SN-E2E-PICK-AGG-01   | 2026-12-31  | 11.5  | 2026-05-01   |
+    当GET "/dispatchlist/by-dispatch_no?dispatch_no=DP-E2E-PICK-AGG-01"
+    那么response should be:
+      """
+      body.json.isSuccess= true
+      body.json.data.size = 1
+      """
+    并且记录响应字段 "body.json.data[0].id" 为 "dispatch.first_id"
+    当GET "/dispatchlist/by-dispatch_no?dispatch_no=DP-E2E-PICK-AGG-02"
+    那么response should be:
+      """
+      body.json.isSuccess= true
+      body.json.data.size = 1
+      """
+    并且记录响应字段 "body.json.data[0].id" 为 "dispatch.second_id"
+    当POST "/dispatchlist/picking-sheet":
+      """
+      {
+        "dispatchlist_ids": [${dispatch.first_id}, ${dispatch.second_id}]
+      }
+      """
+    那么response body should match:
+      """
+      : {
+        isSuccess: true
+        data: {
+          dispatch_nos: ['DP-E2E-PICK-AGG-01', 'DP-E2E-PICK-AGG-02']
+          lines: [{
+            group_key: *
+            sku_code: 'SKU-E2E-PICK-AGG'
+            location_name: 'LOC-E2E-PICK-SHEET-AGG-01'
+            pick_qty: 8
+            picked_qty: 0
+            pick_detail_ids: [*, *]
+            related_dispatches: [{
+              dispatch_no: 'DP-E2E-PICK-AGG-01'
+              pick_qty: 3
+              picked_qty: 0
+            }, {
+              dispatch_no: 'DP-E2E-PICK-AGG-02'
+              pick_qty: 5
+              picked_qty: 0
+            }]
+          }]
+        }
+      }
+      """
+
+  场景: 运行时拣货单不会把不同库位的拣货项错误合并
+    假如以管理员登录
+    并且存在"可用库存":
+      | warehouse.key | warehouse.name              | area.key | area.name                   | area.property | location.key | location.code                 | goods_owner.key | goods_owner.name        | customer.name          | category.name         | spu.key | spu.code               | sku.key | sku.code               | qty | dispatch_no               | dispatch_status | dispatch_qty | dispatch_lock_qty | series_number           | expiry_date | price | putaway_date |
+      | main          | WH-E2E-PICK-SHEET-SPLIT    | main     | AREA-E2E-PICK-SHEET-SPLIT   | 1             | first        | LOC-E2E-PICK-SHEET-SPLIT-01   | main            | 练习货主-PICK-SPLIT    | 练习客户-PICK-SPLIT    | 分类-PICK-SPLIT       | item    | SPU-E2E-PICK-SPLIT     | item    | SKU-E2E-PICK-SPLIT     | 6   | DP-E2E-PICK-SPLIT-01   | 2               | 3            | 3                 | SN-E2E-PICK-SPLIT-01   | 2026-12-31  | 11.5  | 2026-05-01   |
+      | main          | WH-E2E-PICK-SHEET-SPLIT    | main     | AREA-E2E-PICK-SHEET-SPLIT   | 1             | second       | LOC-E2E-PICK-SHEET-SPLIT-02   | main            | 练习货主-PICK-SPLIT    | 练习客户-PICK-SPLIT    | 分类-PICK-SPLIT       | item    | SPU-E2E-PICK-SPLIT     | item    | SKU-E2E-PICK-SPLIT     | 4   | DP-E2E-PICK-SPLIT-02   | 2               | 4            | 4                 | SN-E2E-PICK-SPLIT-01   | 2026-12-31  | 11.5  | 2026-05-01   |
+    当GET "/dispatchlist/by-dispatch_no?dispatch_no=DP-E2E-PICK-SPLIT-01"
+    那么response should be:
+      """
+      body.json.isSuccess= true
+      body.json.data.size = 1
+      """
+    并且记录响应字段 "body.json.data[0].id" 为 "dispatch.first_id"
+    当GET "/dispatchlist/by-dispatch_no?dispatch_no=DP-E2E-PICK-SPLIT-02"
+    那么response should be:
+      """
+      body.json.isSuccess= true
+      body.json.data.size = 1
+      """
+    并且记录响应字段 "body.json.data[0].id" 为 "dispatch.second_id"
+    当POST "/dispatchlist/picking-sheet":
+      """
+      {
+        "dispatchlist_ids": [${dispatch.first_id}, ${dispatch.second_id}]
+      }
+      """
+    那么response body should match:
+      """
+      : {
+        isSuccess: true
+        data: {
+          dispatch_nos: ['DP-E2E-PICK-SPLIT-01', 'DP-E2E-PICK-SPLIT-02']
+          lines: [{
+            sku_code: 'SKU-E2E-PICK-SPLIT'
+            location_name: 'LOC-E2E-PICK-SHEET-SPLIT-01'
+            pick_qty: 3
+            picked_qty: 0
+            pick_detail_ids: [*]
+            related_dispatches: [{
+              dispatch_no: 'DP-E2E-PICK-SPLIT-01'
+              pick_qty: 3
+              picked_qty: 0
+            }]
+          }, {
+            sku_code: 'SKU-E2E-PICK-SPLIT'
+            location_name: 'LOC-E2E-PICK-SHEET-SPLIT-02'
+            pick_qty: 4
+            picked_qty: 0
+            pick_detail_ids: [*]
+            related_dispatches: [{
+              dispatch_no: 'DP-E2E-PICK-SPLIT-02'
+              pick_qty: 4
+              picked_qty: 0
+            }]
+          }]
+        }
+      }
+      """
+
+  场景: 行级拣货确认与撤销会更新拣货员并保持待拣货状态
+    假如以管理员登录
+    并且存在"可用库存":
+      | warehouse.key | warehouse.name            | area.key | area.name                 | area.property | location.key | location.code               | goods_owner.key | goods_owner.name      | customer.name        | category.name       | spu.key | spu.code             | sku.key | sku.code             | qty | dispatch_no             | dispatch_status | dispatch_qty | dispatch_lock_qty | series_number         | expiry_date | price | putaway_date |
+      | main          | WH-E2E-PICK-ITEM         | main     | AREA-E2E-PICK-ITEM        | 1             | main         | LOC-E2E-PICK-ITEM-01        | main            | 练习货主-PICK-ITEM    | 练习客户-PICK-ITEM    | 分类-PICK-ITEM       | item    | SPU-E2E-PICK-ITEM     | item    | SKU-E2E-PICK-ITEM     | 8   | DP-E2E-PICK-ITEM-01   | 2               | 5            | 5                 | SN-E2E-PICK-ITEM-01   | 2026-12-31  | 11.5  | 2026-05-01   |
+    当GET "/dispatchlist/by-dispatch_no?dispatch_no=DP-E2E-PICK-ITEM-01"
+    那么response should be:
+      """
+      body.json.isSuccess= true
+      body.json.data.size = 1
+      """
+    并且记录响应字段 "body.json.data[0].id" 为 "dispatch.id"
+    当GET "/dispatchlist/pick-list?dispatch_id=${dispatch.id}"
+    那么response should be:
+      """
+      body.json.isSuccess= true
+      body.json.data.size = 1
+      body.json.data[0].pick_qty = 5
+      body.json.data[0].picked_qty = 0
+      """
+    并且记录响应字段 "body.json.data[0].id" 为 "pick.id"
+    当PUT "/dispatchlist/confirm-pick-items":
+      """
+      {
+        "pick_detail_ids": [${pick.id}]
+      }
+      """
+    那么response should be:
+      """
+      body.json.isSuccess= true
+      """
+    并且所有"发货单"应为:
+      """
+      : [{
+        dispatch_no: 'DP-E2E-PICK-ITEM-01'
+        sku_code: 'SKU-E2E-PICK-ITEM'
+        dispatch_status: 2
+        picked_qty: 0
+        pick_checker_id: 0
+        pick_checker: ''
+      }]
+      """
+    并且所有"拣货明细"应为:
+      """
+      : [{
+        dispatch_no: 'DP-E2E-PICK-ITEM-01'
+        sku_code: 'SKU-E2E-PICK-ITEM'
+        pick_qty: 5
+        picked_qty: 5
+        picker_id: 1
+        picker: 'Administrator'
+        is_update_stock: false
+      }]
+      """
+    当GET "/dispatchlist/pick-list?dispatch_id=${dispatch.id}"
+    那么response should be:
+      """
+      body.json.isSuccess= true
+      body.json.data[0].picked_qty = 5
+      body.json.data[0].picker_id = 1
+      body.json.data[0].picker = 'Administrator'
+      """
+    当PUT "/dispatchlist/revoke-pick-items":
+      """
+      {
+        "pick_detail_ids": [${pick.id}]
+      }
+      """
+    那么response should be:
+      """
+      body.json.isSuccess= true
+      """
+    并且所有"拣货明细"应为:
+      """
+      : [{
+        dispatch_no: 'DP-E2E-PICK-ITEM-01'
+        sku_code: 'SKU-E2E-PICK-ITEM'
+        pick_qty: 5
+        picked_qty: 0
+        picker_id: 0
+        picker: ''
+        is_update_stock: false
+      }]
+      """
+    当GET "/dispatchlist/pick-list?dispatch_id=${dispatch.id}"
+    那么response should be:
+      """
+      body.json.isSuccess= true
+      body.json.data[0].picked_qty = 0
+      body.json.data[0].picker_id = 0
+      body.json.data[0].picker = ''
+      """
+
+  场景: 整单复核会记录复核员并兼容未先逐条确认的旧流程
+    假如以管理员登录
+    并且存在"可用库存":
+      | warehouse.key | warehouse.name              | area.key | area.name                   | area.property | location.key | location.code                 | goods_owner.key | goods_owner.name        | customer.name          | category.name         | spu.key | spu.code               | sku.key | sku.code               | qty | dispatch_no               | dispatch_status | dispatch_qty | dispatch_lock_qty | series_number           | expiry_date | price | putaway_date |
+      | main          | WH-E2E-PICK-REVIEW         | main     | AREA-E2E-PICK-REVIEW        | 1             | main         | LOC-E2E-PICK-REVIEW-01        | main            | 练习货主-PICK-REVIEW    | 练习客户-PICK-REVIEW    | 分类-PICK-REVIEW       | item    | SPU-E2E-PICK-REVIEW     | item    | SKU-E2E-PICK-REVIEW     | 8   | DP-E2E-PICK-REVIEW-01   | 2               | 5            | 5                 | SN-E2E-PICK-REVIEW-01   | 2026-12-31  | 11.5  | 2026-05-01   |
+    当PUT "/dispatchlist/confirm-pick-dispatchlistno?dispatch_no=DP-E2E-PICK-REVIEW-01":
+      """
+      """
+    那么response should be:
+      """
+      body.json.isSuccess= true
+      """
+    并且所有"发货单"应为:
+      """
+      : [{
+        dispatch_no: 'DP-E2E-PICK-REVIEW-01'
+        sku_code: 'SKU-E2E-PICK-REVIEW'
+        dispatch_status: 3
+        picked_qty: 5
+        pick_checker_id: 1
+        pick_checker: 'Administrator'
+      }]
+      """
+    并且所有"拣货明细"应为:
+      """
+      : [{
+        dispatch_no: 'DP-E2E-PICK-REVIEW-01'
+        sku_code: 'SKU-E2E-PICK-REVIEW'
+        pick_qty: 5
+        picked_qty: 5
+        picker_id: 1
+        picker: 'Administrator'
+        is_update_stock: false
+      }]
+      """

@@ -90,6 +90,7 @@
         </template>
       </vxe-column>
       <vxe-column field="customer_name" :title="$t('wms.deliveryManagement.customer_name')"></vxe-column>
+      <vxe-column field="pick_checker" :title="$t('wms.deliveryManagement.pickChecker')"></vxe-column>
       <vxe-column field="creator" :title="$t('wms.deliveryManagement.creator')"></vxe-column>
       <vxe-date-column
         field="create_time"
