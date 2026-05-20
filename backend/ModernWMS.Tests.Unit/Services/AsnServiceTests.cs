@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using ModernWMS.Core;
 using ModernWMS.Core.DBContext;
+using ModernWMS.Core.DynamicSearch;
 using ModernWMS.Core.JWT;
+using ModernWMS.Core.Models;
 using ModernWMS.Tests.Unit.Support;
 using ModernWMS.WMS.Entities.Models;
 using ModernWMS.WMS.Entities.ViewModels;
@@ -123,6 +125,64 @@ public sealed class AsnServiceTests : IClassFixture<AsnServiceTestFixture>
         stocks.Should().HaveCount(2);
         stocks.Should().ContainSingle(t => t.goods_location_id == master.NormalLocationId && t.qty == 5);
         stocks.Should().ContainSingle(t => t.goods_location_id == master.DamageLocationId && t.qty == 2);
+    }
+
+    [Theory]
+    [InlineData("supplier_name")]
+    [InlineData("sku_name")]
+    public async Task PageAsnmasterAsyncFiltersByDetailFields(string searchField)
+    {
+        var matchPrefix = $"match-{Guid.NewGuid():N}"[..14];
+        var otherPrefix = $"other-{Guid.NewGuid():N}"[..14];
+        await using var connection = await _fixture.OpenConnectionAsync();
+        var matchMaster = await AsnUnitSeedData.SeedMasterDataAsync(connection, matchPrefix, includeDamageLocation: false);
+        var otherMaster = await AsnUnitSeedData.SeedMasterDataAsync(connection, otherPrefix, includeDamageLocation: false);
+        await AsnUnitSeedData.InsertAsnAsync(
+            connection,
+            matchMaster,
+            asnNo: $"ASN-{matchPrefix}",
+            asnStatus: 0,
+            asnQty: 8,
+            sortedQty: 0,
+            price: 19.9M,
+            expiryDate: new DateTime(2026, 12, 31));
+        await AsnUnitSeedData.InsertAsnAsync(
+            connection,
+            otherMaster,
+            asnNo: $"ASN-{otherPrefix}",
+            asnStatus: 0,
+            asnQty: 8,
+            sortedQty: 0,
+            price: 29.9M,
+            expiryDate: new DateTime(2026, 12, 31));
+
+        var searchText = searchField == "supplier_name"
+            ? $"SUP-{matchPrefix}"
+            : $"SKU-{matchPrefix}";
+
+        await using var dbContext = _fixture.CreateDbContext();
+        var service = CreateService(dbContext);
+
+        var (data, totals) = await service.PageAsnmasterAsync(new PageSearch
+        {
+            pageIndex = 1,
+            pageSize = 20,
+            sqlTitle = "asn_status:0",
+            searchObjects = new List<SearchObject>
+            {
+                new()
+                {
+                    Name = searchField,
+                    Operator = Operators.Contains,
+                    Text = searchText,
+                    Value = searchText
+                }
+            }
+        }, TestCurrentUser.Admin());
+
+        totals.Should().Be(1);
+        data.Should().ContainSingle();
+        data[0].asn_no.Should().Be($"ASN-{matchPrefix}");
     }
 
     private static AsnService CreateService(SqlDBContext dbContext)

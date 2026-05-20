@@ -1080,12 +1080,25 @@ namespace ModernWMS.WMS.Services
         /// <returns></returns>
         public async Task<(List<AsnmasterBothViewModel> data, int totals)> PageAsnmasterAsync(PageSearch pageSearch, CurrentUser currentUser)
         {
+            string supplierNameFilter = string.Empty;
+            string skuNameFilter = string.Empty;
             QueryCollection queries = new QueryCollection();
             if (pageSearch.searchObjects.Any())
             {
                 pageSearch.searchObjects.ForEach(s =>
                 {
-                    queries.Add(s);
+                    if (s.Name == "supplier_name")
+                    {
+                        supplierNameFilter = s.Text?.Trim() ?? string.Empty;
+                    }
+                    else if (s.Name == "sku_name")
+                    {
+                        skuNameFilter = s.Text?.Trim() ?? string.Empty;
+                    }
+                    else
+                    {
+                        queries.Add(s);
+                    }
                 });
             }
             Byte asn_status = 255;
@@ -1147,7 +1160,19 @@ namespace ModernWMS.WMS.Services
                                               sorted_qty = a.sorted_qty,
                                           }).ToList()
                         };
-            query = query.Where(queries.AsExpression<AsnmasterBothViewModel>());
+            var expression = queries.AsExpression<AsnmasterBothViewModel>();
+            if (expression != null)
+            {
+                query = query.Where(expression);
+            }
+            if (!string.IsNullOrWhiteSpace(supplierNameFilter))
+            {
+                query = query.Where(vm => vm.detailList.Any(detail => detail.supplier_name != null && detail.supplier_name.Contains(supplierNameFilter)));
+            }
+            if (!string.IsNullOrWhiteSpace(skuNameFilter))
+            {
+                query = query.Where(vm => vm.detailList.Any(detail => detail.sku_name != null && detail.sku_name.Contains(skuNameFilter)));
+            }
             int totals = await query.CountAsync();
             List<AsnmasterBothViewModel> list;
             if(pageSearch.pageIndex<=0 || pageSearch.pageSize <= 0)
