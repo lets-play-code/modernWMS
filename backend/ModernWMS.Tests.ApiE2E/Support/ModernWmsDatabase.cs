@@ -9,11 +9,9 @@ public sealed class ModernWmsDatabase : IAsyncDisposable
 
     public ModernWmsDatabase()
     {
-        Environment.SetEnvironmentVariable("TESTCONTAINERS_RYUK_DISABLED", "true");
-
         _container = new MySqlBuilder()
             .WithImage("mysql:8.0.41")
-            .WithCleanUp(false)
+            .WithCleanUp(true)
             .WithDatabase("wms")
             .WithUsername("modernwms")
             .WithPassword("modernwms_test")
