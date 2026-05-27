@@ -135,11 +135,11 @@ verify_seed() {
   stockadjust_count="$(mysql_exec "SELECT COUNT(*) FROM \`${MYSQL_DATABASE}\`.stockadjust WHERE id BETWEEN 54201 AND 54204;")"
   [ "$stockadjust_count" = "4" ] || die "Expected 4 stockadjust demo rows, found: $stockadjust_count"
 
-  stocktaking_count="$(mysql_exec "SELECT COUNT(*) FROM \`${MYSQL_DATABASE}\`.stocktaking WHERE id BETWEEN 54301 AND 54302;")"
-  [ "$stocktaking_count" = "2" ] || die "Expected 2 stocktaking demo rows, found: $stocktaking_count"
+  stocktaking_count="$(mysql_exec "SELECT COUNT(*) FROM \`${MYSQL_DATABASE}\`.stocktaking WHERE id BETWEEN 54301 AND 54303;")"
+  [ "$stocktaking_count" = "3" ] || die "Expected 3 stocktaking demo rows, found: $stocktaking_count"
 
-  stockprocess_count="$(mysql_exec "SELECT COUNT(*) FROM \`${MYSQL_DATABASE}\`.stockprocess WHERE id BETWEEN 54401 AND 54402;")"
-  [ "$stockprocess_count" = "2" ] || die "Expected 2 stockprocess demo rows, found: $stockprocess_count"
+  stockprocess_count="$(mysql_exec "SELECT COUNT(*) FROM \`${MYSQL_DATABASE}\`.stockprocess WHERE id BETWEEN 54401 AND 54403;")"
+  [ "$stockprocess_count" = "3" ] || die "Expected 3 stockprocess demo rows, found: $stockprocess_count"
 
   picker_name_hex="$(mysql_exec "SELECT HEX(user_name) FROM \`${MYSQL_DATABASE}\`.user WHERE user_num='picker01';")"
   [ "$picker_name_hex" = "E68BA3E8B4A7E591982DE69D8EE6988E" ] || die "Expected picker01 user_name to be stored as UTF-8 Chinese, found HEX: $picker_name_hex"

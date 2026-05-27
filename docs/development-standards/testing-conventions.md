@@ -529,6 +529,36 @@ cd ..
 ./scripts/macos-dev.sh stop
 ```
 
+#### 10.3.1 角色驱动的 UI 权限测试约定
+
+当 UI E2E 需要保护“菜单是否可见 / 按钮是否 disabled”这类前端权限语义时，统一采用以下模式：
+
+- **角色与测试用户通过真实后端 API 对齐**
+  - 不通过 UI 手工维护测试角色
+  - 统一使用固定前缀：角色 `E2E-PERM-*`，用户 `e2e_perm_*`
+  - 每次运行都做幂等对齐，而不是反复插入脏数据
+- **权限覆盖由 manifest 驱动**
+  - manifest 至少要记录：上下文、菜单路径、批准的 action 列表、正向角色、反向角色、对应 spec 文件
+  - 当前仓库的前端权限保护边界是 **24 个菜单入口 + 146 个可达 action 点**
+- **业务状态通过 bundle 准备，不靠 UI 长链路现走**
+  - `system-and-masterdata-baseline`
+  - `asn-workbench-bundle`
+  - `stock-and-statistics-bundle`
+  - `internal-operations-bundle`
+  - `dispatch-workbench-bundle`
+  - bundle 必须可重复执行，且要把页面放到“有权限时按钮本应 enabled”的状态
+- **断言语义必须贴合当前产品实现**
+  - 无菜单权限 → 侧边栏入口 absent
+  - 有菜单但无 action 权限 → 控件 visible 且 disabled
+  - 不要把“业务状态不允许”误判成“权限不允许”
+- **权限套件串行执行**
+  - Playwright `workers` 固定为 `1`
+  - 权限 spec 不并发，共享数据库时避免 bundle 相互污染
+- **验证顺序**
+  - 先跑目标权限 spec
+  - 再回归 `login.spec.ts` 与现有导航冒烟
+  - 最后再跑完整权限目录与全量前端 e2e
+
 ### 10.4 全量脚本
 
 ```bash

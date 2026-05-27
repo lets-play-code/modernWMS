@@ -322,6 +322,29 @@ const { data: res } = await someApi(params)
 - `actionList.ts`
 - 菜单种子数据
 
+#### 8.2.1 权限 UI 测试钩子约定
+
+为了让 Playwright 权限测试保持稳定，涉及菜单和按钮权限的前端代码要额外遵守下面的测试钩子约定：
+
+- **侧边栏菜单项**
+  - 可断言的菜单入口应输出 `data-menu-path="<vue_path>"`
+  - 这个值必须直接对应真实菜单路径，例如 `stockAsn`、`warehouseSetting`、`deliveryManagement`
+- **`tooltip-btn` 按钮**
+  - 按钮应输出 `aria-label`，默认复用已有 tooltip 文案
+  - 允许可选输出 `data-auth-code`
+  - 这些钩子只用于稳定定位，不改变业务语义
+- **`BtnGroup` 顶部操作按钮**
+  - 当 `btnList` 中存在 `code` 时，必须把该 `code` 透传给 `tooltip-btn` 的 `data-auth-code`
+  - 这样权限套件可以稳定断言顶部按钮的 visible / enabled / disabled 状态
+- **行内按钮**
+  - 优先复用 `tooltip-btn + aria-label + 行级作用域` 断言
+  - 只有在失败测试证明不够稳定时，才给个别页面补额外最小钩子
+- **菜单种子数据**
+  - 如果新增了真实可达菜单，除了路由和页面，还必须同步更新：
+    - `scripts/seeds/database_mysql.sql`
+    - `backend/ModernWMS.WMS/Services/User/UserService.cs`
+  - 否则默认开发环境与新租户初始化会出现菜单漂移
+
 ### 8.3 i18n 是默认要求
 
 当前页面绝大多数文案都通过：

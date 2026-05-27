@@ -553,6 +553,7 @@ INSERT INTO `wms`.`menu`(`id`, `menu_name`, `module`, `vue_path`, `vue_path_deta
 INSERT INTO `wms`.`menu`(`id`, `menu_name`, `module`, `vue_path`, `vue_path_detail`, `vue_directory`, `sort`, `tenant_id`, `menu_actions`) VALUES (20, 'saftyStock', 'statisticAnalysis', 'saftyStock', '', 'statisticAnalysis/saftyStock', 4, 1, '[]');
 INSERT INTO `wms`.`menu`(`id`, `menu_name`, `module`, `vue_path`, `vue_path_detail`, `vue_directory`, `sort`, `tenant_id`, `menu_actions`) VALUES (21, 'asnStatistic', 'statisticAnalysis', 'asnStatistic', '', 'statisticAnalysis/asnStatistic', 5, 1, '[]');
 INSERT INTO `wms`.`menu`(`id`, `menu_name`, `module`, `vue_path`, `vue_path_detail`, `vue_directory`, `sort`, `tenant_id`, `menu_actions`) VALUES (22, 'deliveryStatistic', 'statisticAnalysis', 'deliveryStatistic', '', 'statisticAnalysis/deliveryStatistic', 6, 1, '[]');
+INSERT INTO `wms`.`menu`(`id`, `menu_name`, `module`, `vue_path`, `vue_path_detail`, `vue_directory`, `sort`, `tenant_id`, `menu_actions`) VALUES (24, 'stockageStatistic', 'statisticAnalysis', 'stockageStatistic', '', 'statisticAnalysis/stockageStatistic', 7, 1, '[]');
 INSERT INTO `wms`.`menu`(`id`, `menu_name`, `module`, `vue_path`, `vue_path_detail`, `vue_directory`, `sort`, `tenant_id`, `menu_actions`) VALUES (23, 'print', 'baseModule', 'print', '', 'base/print', 11, 1, '[]');
 
 

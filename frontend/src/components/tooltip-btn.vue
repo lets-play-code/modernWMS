@@ -1,7 +1,17 @@
 <template>
   <v-tooltip location="bottom">
     <template #activator="{ props }">
-      <v-btn :disabled="disabled" :flat="flat" class="mr-3" :size="size" icon v-bind="props" @click="method.clickEvent">
+      <v-btn
+        :disabled="disabled"
+        :flat="flat"
+        class="mr-3"
+        :size="size"
+        icon
+        :aria-label="tooltipText || undefined"
+        :data-auth-code="authCode || undefined"
+        v-bind="props"
+        @click="method.clickEvent"
+      >
         <v-icon :color="iconColor"> {{ icon }} </v-icon>
       </v-btn>
     </template>
@@ -39,6 +49,10 @@ defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  authCode: {
+    type: String,
+    default: ''
   }
 })
 

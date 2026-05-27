@@ -6,6 +6,7 @@
       :disabled="Boolean(bItem.code) && !authorityList.includes(bItem.code)"
       :icon="bItem.icon"
       :tooltip-text="bItem.name"
+      :auth-code="bItem.code"
       @click="bItem.click"
     ></tooltip-btn>
   </div>

@@ -14,7 +14,7 @@
       </div>
       <div class="sideBarMenus">
         <div v-for="(item, index) in data.menuList" :key="index">
-          <div class="menuItems" :class="method.getItemClass(item)" @click="method.openMenu(item)">
+          <div class="menuItems" :class="method.getItemClass(item)" :data-menu-path="item.routerPath || undefined" @click="method.openMenu(item)">
             <div style="display: flex; align-items: center; height: 100%">
               <div class="menuIcon">
                 <v-icon
@@ -39,6 +39,7 @@
                 :key="detailIndex"
                 class="menuItems padding-l"
                 :class="method.getItemClass(detailItem)"
+                :data-menu-path="detailItem.routerPath || undefined"
                 @click="method.openMenu(detailItem)"
               >
                 <div style="display: flex; align-items: center; height: 100%">

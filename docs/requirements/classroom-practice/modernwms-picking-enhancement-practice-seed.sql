@@ -230,19 +230,23 @@ VALUES
 INSERT INTO `stocktaking` (`id`, `job_code`, `job_status`, `sku_id`, `goods_owner_id`, `goods_location_id`, `book_qty`, `counted_qty`, `difference_qty`, `handler`, `handle_time`, `creator`, `create_time`, `last_update_time`, `tenant_id`, `series_number`, `expiry_date`, `price`, `putaway_date`)
 VALUES
   (54301, 'TAKING-DEMO-001', 0, 51706, 51301, 51203, 10, 0, 0, '', '1900-01-01 00:00:00', 'practice-seed', '2026-05-15 15:20:00', '2026-05-15 15:20:00', 1, 'WORK-TAKE-OPEN', '2027-05-31', 25.00, '2026-05-11'),
-  (54302, 'TAKING-DEMO-002', 1, 51706, 51301, 51204, 8, 7, -1, 'admin', '2026-05-15 15:30:00', 'practice-seed', '2026-05-15 15:25:00', '2026-05-15 15:30:00', 1, 'WORK-TAKE-DONE', '2027-05-31', 25.00, '2026-05-11');
+  (54302, 'TAKING-DEMO-002', 1, 51706, 51301, 51204, 8, 7, -1, 'admin', '2026-05-15 15:30:00', 'practice-seed', '2026-05-15 15:25:00', '2026-05-15 15:30:00', 1, 'WORK-TAKE-DONE', '2027-05-31', 25.00, '2026-05-11'),
+  (54303, 'TAKING-DEMO-003', 1, 51706, 51301, 51203, 6, 6, 0, 'admin', '2026-05-15 15:35:00', 'practice-seed', '2026-05-15 15:32:00', '2026-05-15 15:35:00', 1, 'WORK-TAKE-READY-ADJUST', '2027-05-31', 25.00, '2026-05-11');
 
 INSERT INTO `stockprocess` (`id`, `job_code`, `job_type`, `process_status`, `processor`, `process_time`, `creator`, `create_time`, `last_update_time`, `tenant_id`)
 VALUES
   (54401, 'PROCESS-DEMO-001', 0, 0, '', '1900-01-01 00:00:00', 'practice-seed', '2026-05-15 15:40:00', '2026-05-15 15:40:00', 1),
-  (54402, 'PROCESS-DEMO-002', 1, 1, 'admin', '2026-05-15 15:55:00', 'practice-seed', '2026-05-15 15:45:00', '2026-05-15 15:55:00', 1);
+  (54402, 'PROCESS-DEMO-002', 1, 1, 'admin', '2026-05-15 15:55:00', 'practice-seed', '2026-05-15 15:45:00', '2026-05-15 15:55:00', 1),
+  (54403, 'PROCESS-DEMO-003', 0, 1, 'admin', '2026-05-15 16:05:00', 'practice-seed', '2026-05-15 16:00:00', '2026-05-15 16:05:00', 1);
 
 INSERT INTO `stockprocessdetail` (`id`, `stock_process_id`, `sku_id`, `goods_owner_id`, `goods_location_id`, `qty`, `last_update_time`, `tenant_id`, `is_source`, `is_update_stock`, `series_number`, `expiry_date`, `price`, `putaway_date`)
 VALUES
   (54501, 54401, 51706, 51301, 51203, 2, '2026-05-15 15:40:00', 1, 1, 0, 'WORK-PROC-SRC-OPEN', '2027-05-31', 25.00, '2026-05-11'),
   (54502, 54401, 51706, 51301, 51201, 2, '2026-05-15 15:40:00', 1, 0, 0, 'WORK-PROC-TGT-OPEN', '2027-05-31', 25.00, '2026-05-11'),
   (54503, 54402, 51706, 51301, 51203, 3, '2026-05-15 15:55:00', 1, 1, 1, 'WORK-PROC-SRC-DONE', '2027-05-31', 25.00, '2026-05-11'),
-  (54504, 54402, 51706, 51301, 51202, 3, '2026-05-15 15:55:00', 1, 0, 1, 'WORK-PROC-TGT-DONE', '2027-05-31', 25.00, '2026-05-11');
+  (54504, 54402, 51706, 51301, 51202, 3, '2026-05-15 15:55:00', 1, 0, 1, 'WORK-PROC-TGT-DONE', '2027-05-31', 25.00, '2026-05-11'),
+  (54505, 54403, 51706, 51301, 51203, 1, '2026-05-15 16:05:00', 1, 1, 1, 'WORK-PROC-SRC-READY-ADJUST', '2027-05-31', 25.00, '2026-05-11'),
+  (54506, 54403, 51706, 51301, 51201, 1, '2026-05-15 16:05:00', 1, 0, 1, 'WORK-PROC-TGT-READY-ADJUST', '2027-05-31', 25.00, '2026-05-11');
 
 COMMIT;
 SET FOREIGN_KEY_CHECKS = 1;
