@@ -7,7 +7,7 @@ description: Use when adding a new ModernWMS backend capability, API, or service
 
 ## Overview
 
-Implement new backend work in ModernWMS with test-first flow and the repository's actual stack. Follow thin controller, thick service, explicit tenant handling, and existing DTO / paging / localization patterns.
+Implement new backend work in ModernWMS under a strict TDD gate: **RED → Verify RED → GREEN → Verify GREEN → REFACTOR → Final Verification**. No production code before a failing test first.
 
 ## Required Reading
 
@@ -34,21 +34,30 @@ Before acting, read:
 
 | Phase | Must do |
 | --- | --- |
-| 阅读现有实现 | 先看 `Program.cs`、`Startup.cs`、相关 Controller / IServices / Services / ViewModels / Tests |
-| 测试先行 | 先补 API E2E 或单元测试，再跑红灯 |
-| 最小实现 | 在 `Controllers`、`IServices`、`Services`、`Entities/ViewModels`、必要时 `Entities/Models` 做最小改动 |
-| 绿灯验证 | 先跑当前测试，再跑相关测试类 / feature |
-| 最小重构 | 只整理本次实现直接相关的重复、命名、边界 |
-| 充分验证 | 目标 unit / API E2E、`dotnet build`、`test-all.sh --skip-ui`，必要时 UI 驱动 E2E |
+| 阅读现状 | 先看 `Program.cs`、`Startup.cs`、相关 Controller / IServices / Services / ViewModels / Tests |
+| RED | 先选最小验证切片，再写失败测试 |
+| Verify RED | 亲自运行并确认“因目标行为缺失而失败”，不是环境错误 |
+| GREEN | 只做让当前 RED 通过的最小实现 |
+| Verify GREEN | 当前测试、受影响近邻测试通过；命中 UI 条件时目标 UI 驱动 E2E 也通过 |
+| REFACTOR | 仅在绿灯下做局部整理，整理后重新回绿 |
+| Final Verification | 按范围跑 target unit / API E2E、`dotnet build`、`test-all.sh --skip-ui`，必要时 UI 驱动 E2E |
 
 ## Hard Rules
 
-- 先测试，后实现。
-- Controller 继承 `BaseController`，保持薄；业务逻辑放 Service。
-- 返回统一使用 `ResultModel<T>`；分页统一使用 `PageSearch` / `PageData<T>`。
-- Service 继续用 `SqlDBContext` + LINQ / EF Core；读操作优先 `AsNoTracking()`。
-- 写操作显式处理 `tenant_id`、`create_time`、`last_update_time`、`IStringLocalizer<MultiLanguage>`。
-- 不在局部引入新的 Repository / UnitOfWork / Java 风格分层。
+- No production code before a failing test first.
+- Verify RED is mandatory. Test passing immediately means the test is wrong or already covered.
+- Verify GREEN is mandatory before refactor or completion claims.
+- Controller stays thin; business logic stays in Service.
+- Keep `ResultModel<T>` / `PageData<T>` / tenant / localization conventions intact.
+- Do not bundle unrelated refactors into feature implementation.
+
+## UI-driven E2E Trigger
+
+UI-driven E2E must enter the verification chain when any of these apply:
+- menu / route / page reachability changes
+- button permission or visible / disabled semantics change
+- frontend logic depends on backend fields for status, visibility, or UI / API consistency
+- the real user flow must be proven across UI + API + DB
 
 ## Required Checks
 
@@ -64,37 +73,32 @@ Check these when relevant:
 
 ## Verification
 
-- target unit tests when checking service / core branches:
+- target unit tests:
   - `cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~<ServiceTests>"`
-- target API E2E when checking real HTTP + service + DB:
+- target API E2E:
   - `cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj --filter "FullyQualifiedName~<ContextOrFeature>"`
 - build:
   - `cd backend && dotnet build ModernWMS.sln`
 - broader backend verification:
   - `./scripts/test-all.sh --skip-ui`
-- UI-driven E2E when backend work reaches menus, permissions, page states, or UI / API consistency:
+- target UI-driven E2E when triggered:
   - `./scripts/macos-dev.sh start`
   - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)`
   - `./scripts/macos-dev.sh stop`
-- integration status when needed:
+- integration status only when needed:
   - `./scripts/macos-dev.sh status`
-
-## Handoff
-
-- 新接口需要页面入口 / 页面适配 → `modernwms-frontend-implementation`
-- 完成后若需要系统性整理 → `modernwms-code-refactoring`
 
 ## Common Mistakes
 
-- 按 Spring / JPA / Maven / repository 模式实现
-- 跳过红灯，直接写实现
-- 忘记 `tenant_id`、本地化消息、统一返回、分页契约
-- 漏掉 seed SQL、权限、菜单、前端入口同步检查
-- 在新功能实现中顺手扩张成大重构
+- 跳过 RED，直接写实现
+- 没验证 RED 的失败原因，就开始改代码
+- 用 `dotnet build` 代替行为验证
+- 命中 UI 条件却没跑目标 UI 驱动 E2E
+- 顺手扩张成大重构
 
 ## Full Workflow
 
-For the complete workflow, stop points, file list, and command examples, read:
+For the complete workflow, stop points, and strict gates, read:
 - `../../../docs/development-standards/ai-collaboration-sop/backend-implementation-sop.md`
 
 **REQUIRED SUB-SKILL:** Use `test-driven-development` before implementation and `verification-before-completion` before claiming success.

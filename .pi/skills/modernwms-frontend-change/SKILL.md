@@ -7,7 +7,7 @@ description: Use when adapting existing ModernWMS frontend pages to API field ch
 
 ## Overview
 
-Handle existing frontend changes in ModernWMS as targeted adaptation work. Understand the change source, map impacted files first, then make the smallest update across API, types, views, i18n, logs, and permissions.
+Handle existing frontend changes in ModernWMS as strict regression work: **understand delta → impact analysis → RED → Verify RED → GREEN → Verify GREEN → Final Verification**. No implementation before a failing test first.
 
 ## Required Reading
 
@@ -24,18 +24,29 @@ Before acting, read:
 | Phase | Must do |
 | --- | --- |
 | 理解变更 | 明确来自后端契约变化还是纯前端交互调整，列出前后差异 |
-| 影响分析 | 先列 API / 类型 / 页面 / 组件 / 路由 / 权限 / 日志 / i18n 的受影响文件 |
-| 实施顺序 | API 与类型 → 页面脚本逻辑 → 模板展示 → i18n / 日志 / 权限 / 路由 |
-| 验证 | 至少 `yarn build`，需要时联调或 UI 驱动 E2E 回归 |
+| 影响分析 | 先列 API / 类型 / 页面 / 组件 / 路由 / 权限 / 日志 / i18n 的受影响文件，并判断 UI 驱动 E2E 是否触发 |
+| RED | 优先迭代已有 Playwright spec；必要时新增目标 spec |
+| Verify RED | 亲自运行并确认“旧 UI 行为仍在 / 新契约未适配”，不是环境错误 |
+| GREEN | API 与类型 → 页面脚本 → 模板 → i18n / 日志 / 权限 / 路由，且只做最小改动 |
+| Verify GREEN | 当前 RED、受影响冒烟、构建通过 |
+| Final Verification | 按范围跑目标或全量 UI 驱动 E2E，并补 `yarn build` |
 | 文档同步 | 只有形成稳定规则时才更新长期设计 / 规范文档 |
 
 ## Hard Rules
 
-- 以后端真实契约和现有页面模式为准。
-- 先分析影响文件，再动代码。
+- 先分析影响，再改代码。
+- 先改测试，再改实现。
+- `yarn build` 不是 RED / GREEN 的行为证明。
 - 最小变更，不借机重写整页。
-- 保持现有 Vuetify + VXETable + Vuex 体系一致性。
-- 用户可见变化必须经过构建或联调验证。
+- 用户可见变化必须经过真实验证，而不是只靠人工目测。
+
+## UI-driven E2E Trigger
+
+UI-driven E2E must enter the verification chain when any of these apply:
+- menu / route / page reachability changes
+- button permission or visible / disabled semantics change
+- frontend logic depends on backend fields for status, visibility, or UI / API consistency
+- the real user flow must be proven across UI + API + DB
 
 ## Required Checks
 
@@ -51,12 +62,7 @@ Check these when relevant:
 
 ## Verification
 
-- build when the verification point is static structure / types / styles only:
-  - `cd frontend && yarn build`
-- integration start / status:
-  - `./scripts/macos-dev.sh start`
-  - `./scripts/macos-dev.sh status`
-- target UI-driven E2E when validating UI + API + DB together:
+- target UI-driven E2E:
   - `./scripts/macos-dev.sh start`
   - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)`
   - `./scripts/macos-dev.sh stop`
@@ -64,27 +70,23 @@ Check these when relevant:
   - `./scripts/macos-dev.sh start`
   - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e)`
   - `./scripts/macos-dev.sh stop`
-
-UI-driven E2E is not frontend-only. Use it when menu / button semantics, page reachability, real API interaction, or UI / API consistency must be verified.
-
-## Stop Points
-
-Stop and confirm after:
-1. 变更理解
-2. 影响文件范围确认
-3. 构建 / 联调结果
+- build:
+  - `cd frontend && yarn build`
+- integration start / status only when needed:
+  - `./scripts/macos-dev.sh start`
+  - `./scripts/macos-dev.sh status`
 
 ## Common Mistakes
 
+- 先改页面，再补 Playwright 测试
+- 把 `yarn build` 当成行为验证
 - 因一次字段改动重做整页结构
-- 引入与仓库不一致的新 UI 框架或新状态管理
 - 跳过 i18n 直接硬编码
 - 忘记同步日志文案、权限或动态菜单
-- 没跑 `yarn build` 就宣称前端改完
 
 ## Full Workflow
 
-For the complete flow, affected-file templates, and stop points, read:
+For the complete flow, strict gates, and affected-file templates, read:
 - `../../../docs/development-standards/ai-collaboration-sop/frontend-change-sop.md`
 
-**REQUIRED SUB-SKILL:** Use `verification-before-completion` before claiming the frontend change is complete.
+**REQUIRED SUB-SKILL:** Use `test-driven-development` for behavior changes and `verification-before-completion` before claiming the frontend change is complete.

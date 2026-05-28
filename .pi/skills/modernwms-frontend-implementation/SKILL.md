@@ -7,7 +7,7 @@ description: Use when adding a new ModernWMS page, dialog, list, or frontend wor
 
 ## Overview
 
-Implement new frontend work in ModernWMS by fitting the existing page skeleton, API layer, dynamic menu model, and field naming rules. Do not import a different frontend architecture into this repo.
+Implement new frontend work in ModernWMS under a strict TDD gate: **RED → Verify RED → GREEN → Verify GREEN → REFACTOR → Final Verification**. API / types / i18n / view code are all production code and cannot be written before a failing test first.
 
 ## Required Reading
 
@@ -35,20 +35,31 @@ Before acting, read:
 | Phase | Must do |
 | --- | --- |
 | F0 菜单归属 | 先确认页面属于哪个视图分组、是否进动态菜单、是完整页面还是弹窗 |
-| F1 API / 数据契约 | 只分析当前必须支持的后端 API、请求参数、响应结构、分页结构 |
-| F2 API / 类型 / i18n | 先补 `src/api`、`src/types`、`src/languages` |
-| F3 页面 / 弹窗实现 | 复用现有 `script setup`、`reactive`、`vxe-table`、`custom-pager`、`BtnGroup`、`SearchGroup` 骨架 |
-| F4 路由 / 权限 / 日志 | 接 `router`、`actionList.ts`、`systemLog.ts`、后端菜单 / seed 配套 |
-| F5 验证 | `yarn build`，必要时联调；需要同时验证 UI / API 时跑 UI 驱动 E2E |
+| F1 验证切片 | 分析 API / 数据契约，并判断是否命中 UI 驱动 E2E 条件 |
+| RED | 优先写 / 改目标 Playwright spec，表达最小用户可见行为切片 |
+| Verify RED | 亲自运行并确认“因 UI / 链路行为未实现而失败”，不是环境错误 |
+| GREEN | 先补 API / 类型 / i18n，再补页面 / 路由 / 权限 / 日志，且只做最小实现 |
+| Verify GREEN | 当前 RED、受影响冒烟、构建通过 |
+| REFACTOR | 仅在绿灯下做局部整理 |
+| Final Verification | 按范围跑目标或全量 UI 驱动 E2E，并补 `yarn build` |
 
 ## Hard Rules
 
-- 以后端 API 和现有页面骨架为准。
-- 先补 API / 类型 / i18n，再写页面。
-- 业务字段保持 `snake_case`，不要新造 camelCase 映射层。
-- 页面里不要直接写 axios。
-- 继续复用 `vxe-table`、`custom-pager`、`tooltip-btn`、`BtnGroup`、`SearchGroup`、`hookComponent.$message()` / `$dialog()`。
-- 新页面不仅要能显示，还要检查菜单、权限、日志、路由是否接通。
+- No production code before a failing test first.
+- `yarn build` is supplemental verification only, never a RED / GREEN proof.
+- Keep `snake_case`; do not invent a new camelCase mapping layer.
+- Reuse existing page skeletons and helpers.
+- New pages must also connect route / menu / permission / log paths when relevant.
+
+## UI-driven E2E Trigger
+
+UI-driven E2E must enter RED / GREEN when any of these apply:
+- menu / route / page reachability changes
+- button permission or visible / disabled semantics change
+- frontend logic depends on backend fields for status, visibility, or UI / API consistency
+- the real user flow must be proven across UI + API + DB
+
+For new pages, routes, menus, and button interactions, this is usually triggered by default.
 
 ## Required Checks
 
@@ -69,13 +80,7 @@ Check these when relevant:
 
 ## Verification
 
-- build when the verification point is static structure / types / styles only:
-  - `cd frontend && yarn build`
-- integration status:
-  - `./scripts/macos-dev.sh status`
-- full start when needed:
-  - `./scripts/macos-dev.sh start`
-- target UI-driven E2E when validating UI + API + DB together:
+- target UI-driven E2E:
   - `./scripts/macos-dev.sh start`
   - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)`
   - `./scripts/macos-dev.sh stop`
@@ -83,30 +88,22 @@ Check these when relevant:
   - `./scripts/macos-dev.sh start`
   - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e)`
   - `./scripts/macos-dev.sh stop`
-
-UI-driven E2E is not frontend-only. Use it when menu / button semantics, page reachability, real API interaction, or UI / API consistency must be verified.
-
-> Long-running commands must use repo scripts or `tmux`, not a blocking terminal session.
-
-## Stop Points
-
-Stop and confirm after:
-1. 菜单归属、页面类型、入口位置
-2. API 契约是否稳定
-3. 构建 / 联调结果
+- build:
+  - `cd frontend && yarn build`
+- integration status only when needed:
+  - `./scripts/macos-dev.sh status`
 
 ## Common Mistakes
 
-- 在页面里直接写 axios
+- 先写页面，再补 Playwright 测试
+- 把 `yarn build` 当成 RED / GREEN 证明
 - 引入 Element Plus / Pinia / frontend-v2 / pnpm 约定
 - 把接口字段整体改成 camelCase
-- 新页面漏接路由、权限、菜单 seed、日志文案
-- 大量硬编码中文，跳过 i18n
-- 在普通管理页绕开现有 `vxe-table + custom-pager` 模式
+- 漏接 route / menu / permission / log 配套
 
 ## Full Workflow
 
-For the complete workflow, required files, and stop points, read:
+For the complete workflow, strict gates, and stop points, read:
 - `../../../docs/development-standards/ai-collaboration-sop/frontend-implementation-sop.md`
 
 **REQUIRED SUB-SKILL:** Use `test-driven-development` when implementation affects behavior and `verification-before-completion` before claiming success.

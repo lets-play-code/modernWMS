@@ -7,7 +7,7 @@ description: Use when improving existing ModernWMS code structure after behavior
 
 ## Overview
 
-Refactor ModernWMS code only under green tests or clear verification coverage. Improve one local problem at a time, verify after each change, and avoid turning a bounded cleanup into an architecture rewrite.
+Refactor ModernWMS code only under an existing green baseline. This skill aligns to the **REFACTOR** phase of TDD: establish GREEN first, make one structural change, then return to GREEN before continuing.
 
 ## Required Reading
 
@@ -21,43 +21,35 @@ Before acting, read:
 
 | Phase | Must do |
 | --- | --- |
-| 生成清单 | 列出重复代码、命名、方法过长、边界混乱、性能问题、魔法值等具体问题 |
-| 逐项重构 | 一次只处理一个问题，不交叉改动 |
-| 每项后验证 | 后端 / 前端 / 联调按最小充分命令验证 |
-| 文档沉淀 | 只有稳定新规则才更新长期规范 |
-
-## Focus Areas
-
-Backend checks:
-- Controller 过胖
-- Service 过长
-- 重复 LINQ / tenant 过滤
-- 绕开 `ResultModel<T>` / `PageData<T>`
-- 缺失 `AsNoTracking()`、N+1、重复查询
-- 本地化遗漏
-
-Frontend checks:
-- 页面直写请求，绕开 `src/api/**`
-- 页面状态组织混乱
-- 重复列表骨架
-- 文案硬编码，跳过 i18n
-- 权限 / 日志遗漏
-- 为单页需求做无复用价值的过度抽象
+| 绿灯基线 | 先明确哪条测试链路证明当前行为为绿 |
+| 单问题清单 | 一次只选一个重复 / 命名 / 边界 / 性能问题 |
+| 最小重构 | 只做一个局部结构整理 |
+| 回到绿灯 | 立即跑同一条基线；命中 UI 条件时目标 UI 驱动 E2E 也要回绿 |
+| 重复 | 清单未完成前持续“一问题一验证” |
+| Final Verification | 范围较大时跑更高等级验证，并按需沉淀长期规则 |
 
 ## Hard Rules
 
-- 测试绿灯优先于重构速度。
+- No green baseline, no refactor.
 - 一次只处理一个问题。
-- 局部重构，不借机改写整层架构。
-- 优先改善重复、命名、边界、可读性和明显性能问题。
+- 如果发现需要改行为，立即停止并切换到实现 / 变更 SOP。
 - 重构后必须重新验证，而不是凭感觉说更好了。
+- 不把局部整理升级成全局架构改造。
+
+## UI-driven E2E Trigger
+
+UI-driven E2E must enter the regression chain when any of these apply:
+- menu / route / page reachability could be affected
+- button permission or visible / disabled semantics could be affected
+- frontend logic depends on backend fields for status, visibility, or UI / API consistency
+- the real user flow must remain proven across UI + API + DB
 
 ## Verification
 
 Backend:
-- target unit tests for service / core branches:
+- target unit tests:
   - `cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~<ServiceTests>"`
-- target API E2E for real HTTP + service + DB:
+- target API E2E:
   - `cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj --filter "FullyQualifiedName~<ContextOrFeature>"`
 - build:
   - `cd backend && dotnet build ModernWMS.sln`
@@ -65,9 +57,7 @@ Backend:
   - `./scripts/test-all.sh --skip-ui`
 
 Frontend / UI-driven E2E:
-- build when the verification point is static structure / types / styles only:
-  - `cd frontend && yarn build`
-- target UI-driven E2E when validating UI + API + DB together:
+- target UI-driven E2E:
   - `./scripts/macos-dev.sh start`
   - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)`
   - `./scripts/macos-dev.sh stop`
@@ -75,31 +65,31 @@ Frontend / UI-driven E2E:
   - `./scripts/macos-dev.sh start`
   - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e)`
   - `./scripts/macos-dev.sh stop`
-
-UI-driven E2E is not frontend-only. Use it when menu / button semantics, page reachability, real API interaction, or UI / API consistency must remain unchanged.
+- build:
+  - `cd frontend && yarn build`
 
 Integration:
 - `./scripts/macos-dev.sh status`
-- use repo scripts or `tmux` for long-running start / stop flows
 
 ## Stop and Report When
 
+- 当前没有绿灯基线
+- 实际上已经变成行为修改任务
 - 重构开始触及未批准模块
 - 为了“更优雅”需要大规模改架构
-- 测试覆盖不足，无法安全确认行为不变
 - 需要同时动前后端多个边界且目标不清晰
 
 ## Common Mistakes
 
-- 在没有测试或验证基线时重构
+- 在没有测试基线时重构
 - 一次混入多个问题：命名、抽象、行为修改一起做
 - 因为“顺手”扩大需求范围
-- 把局部整理升级成全局框架改造
+- 把行为修改伪装成重构
 - 验证失败后仍宣称重构完成
 
 ## Full Workflow
 
-For the full checklist, examples, and stop points, read:
+For the full checklist, green-baseline gate, and repetition pattern, read:
 - `../../../docs/development-standards/ai-collaboration-sop/code-refactoring-sop.md`
 
 **REQUIRED SUB-SKILL:** Use `verification-before-completion` before claiming the refactor is done.
