@@ -28,7 +28,7 @@ Before acting, read:
 - Vue Router 4
 - Vue I18n
 - Axios via `frontend/src/utils/http/request.ts`
-- Playwright E2E
+- UI-driven E2E: Playwright against real frontend / backend / MySQL
 
 ## Quick Reference
 
@@ -39,7 +39,7 @@ Before acting, read:
 | F2 API / 类型 / i18n | 先补 `src/api`、`src/types`、`src/languages` |
 | F3 页面 / 弹窗实现 | 复用现有 `script setup`、`reactive`、`vxe-table`、`custom-pager`、`BtnGroup`、`SearchGroup` 骨架 |
 | F4 路由 / 权限 / 日志 | 接 `router`、`actionList.ts`、`systemLog.ts`、后端菜单 / seed 配套 |
-| F5 验证 | `yarn build`，必要时联调或 UI E2E |
+| F5 验证 | `yarn build`，必要时联调；需要同时验证 UI / API 时跑 UI 驱动 E2E |
 
 ## Hard Rules
 
@@ -69,10 +69,22 @@ Check these when relevant:
 
 ## Verification
 
-- build: `cd frontend && yarn build`
-- integration status: `./scripts/macos-dev.sh status`
-- full start when needed: `./scripts/macos-dev.sh start`
-- UI E2E: `cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e`
+- build when the verification point is static structure / types / styles only:
+  - `cd frontend && yarn build`
+- integration status:
+  - `./scripts/macos-dev.sh status`
+- full start when needed:
+  - `./scripts/macos-dev.sh start`
+- target UI-driven E2E when validating UI + API + DB together:
+  - `./scripts/macos-dev.sh start`
+  - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)`
+  - `./scripts/macos-dev.sh stop`
+- full UI-driven E2E regression:
+  - `./scripts/macos-dev.sh start`
+  - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e)`
+  - `./scripts/macos-dev.sh stop`
+
+UI-driven E2E is not frontend-only. Use it when menu / button semantics, page reachability, real API interaction, or UI / API consistency must be verified.
 
 > Long-running commands must use repo scripts or `tmux`, not a blocking terminal session.
 

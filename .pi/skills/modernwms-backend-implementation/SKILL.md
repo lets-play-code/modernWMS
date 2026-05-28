@@ -28,6 +28,7 @@ Before acting, read:
 - Paging/search: `PageSearch` + `SearchObject` + `QueryCollection`
 - API E2E: Reqnroll + xUnit + Testcontainers.MySql
 - Unit tests: xUnit + FluentAssertions
+- UI-driven E2E: Playwright + real frontend / backend / MySQL when user-visible cross-layer behavior needs protection
 
 ## Quick Reference
 
@@ -38,7 +39,7 @@ Before acting, read:
 | 最小实现 | 在 `Controllers`、`IServices`、`Services`、`Entities/ViewModels`、必要时 `Entities/Models` 做最小改动 |
 | 绿灯验证 | 先跑当前测试，再跑相关测试类 / feature |
 | 最小重构 | 只整理本次实现直接相关的重复、命名、边界 |
-| 充分验证 | `dotnet build`、`test-all.sh --skip-ui`、必要时联调 |
+| 充分验证 | 目标 unit / API E2E、`dotnet build`、`test-all.sh --skip-ui`，必要时 UI 驱动 E2E |
 
 ## Hard Rules
 
@@ -63,11 +64,20 @@ Check these when relevant:
 
 ## Verification
 
-- target API E2E: `cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj`
-- target unit tests: `cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~<ServiceTests>"`
-- build: `cd backend && dotnet build ModernWMS.sln`
-- broader backend verification: `./scripts/test-all.sh --skip-ui`
-- integration status when needed: `./scripts/macos-dev.sh status`
+- target unit tests when checking service / core branches:
+  - `cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~<ServiceTests>"`
+- target API E2E when checking real HTTP + service + DB:
+  - `cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj --filter "FullyQualifiedName~<ContextOrFeature>"`
+- build:
+  - `cd backend && dotnet build ModernWMS.sln`
+- broader backend verification:
+  - `./scripts/test-all.sh --skip-ui`
+- UI-driven E2E when backend work reaches menus, permissions, page states, or UI / API consistency:
+  - `./scripts/macos-dev.sh start`
+  - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)`
+  - `./scripts/macos-dev.sh stop`
+- integration status when needed:
+  - `./scripts/macos-dev.sh status`
 
 ## Handoff
 

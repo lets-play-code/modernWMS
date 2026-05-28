@@ -26,7 +26,7 @@ Before acting, read:
 | 影响分析 | 检查 `ResultModel<T>`、`PageData<T>`、tenant、导入导出、打印、权限、日志、seed、前端契约 |
 | 红灯测试 | 优先迭代现有 API E2E / 单元测试，不轻易复制平行场景 |
 | 最小实现 | 按 ViewModel → Service → Controller → seed / 权限 / 日志配套顺序改 |
-| 绿灯验证 | 先当前测试，再受影响模块，再 `dotnet build` / `test-all.sh` |
+| 绿灯验证 | 先当前测试，再受影响模块，再 `dotnet build` / `test-all.sh`，必要时补 UI 驱动 E2E |
 | 前端评估 | 判断是否需要 `modernwms-frontend-change` |
 | 文档同步 | 必要时更新长期规则或过程状态 |
 
@@ -56,10 +56,18 @@ Check these when relevant:
 
 ## Verification
 
-- target unit tests: `cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~<ServiceTests>"`
-- target API E2E: `cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj`
-- build: `cd backend && dotnet build ModernWMS.sln`
-- broader backend verification: `./scripts/test-all.sh --skip-ui`
+- target unit tests when checking service / core branches:
+  - `cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~<ServiceTests>"`
+- target API E2E when checking real HTTP + service + DB:
+  - `cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj --filter "FullyQualifiedName~<ContextOrFeature>"`
+- build:
+  - `cd backend && dotnet build ModernWMS.sln`
+- broader backend verification:
+  - `./scripts/test-all.sh --skip-ui`
+- UI-driven E2E when the backend delta changes menus, permissions, page states, or UI / API consistency:
+  - `./scripts/macos-dev.sh start`
+  - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)`
+  - `./scripts/macos-dev.sh stop`
 
 ## Stop Points
 

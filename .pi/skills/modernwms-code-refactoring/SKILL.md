@@ -55,13 +55,28 @@ Frontend checks:
 ## Verification
 
 Backend:
-- `cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~<ServiceTests>"`
-- `cd backend && dotnet build ModernWMS.sln`
-- `./scripts/test-all.sh --skip-ui`
+- target unit tests for service / core branches:
+  - `cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~<ServiceTests>"`
+- target API E2E for real HTTP + service + DB:
+  - `cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj --filter "FullyQualifiedName~<ContextOrFeature>"`
+- build:
+  - `cd backend && dotnet build ModernWMS.sln`
+- broader backend verification:
+  - `./scripts/test-all.sh --skip-ui`
 
-Frontend:
-- `cd frontend && yarn build`
-- `cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e`
+Frontend / UI-driven E2E:
+- build when the verification point is static structure / types / styles only:
+  - `cd frontend && yarn build`
+- target UI-driven E2E when validating UI + API + DB together:
+  - `./scripts/macos-dev.sh start`
+  - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)`
+  - `./scripts/macos-dev.sh stop`
+- full UI-driven regression when needed:
+  - `./scripts/macos-dev.sh start`
+  - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e)`
+  - `./scripts/macos-dev.sh stop`
+
+UI-driven E2E is not frontend-only. Use it when menu / button semantics, page reachability, real API interaction, or UI / API consistency must remain unchanged.
 
 Integration:
 - `./scripts/macos-dev.sh status`

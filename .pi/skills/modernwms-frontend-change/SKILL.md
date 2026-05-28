@@ -26,7 +26,7 @@ Before acting, read:
 | 理解变更 | 明确来自后端契约变化还是纯前端交互调整，列出前后差异 |
 | 影响分析 | 先列 API / 类型 / 页面 / 组件 / 路由 / 权限 / 日志 / i18n 的受影响文件 |
 | 实施顺序 | API 与类型 → 页面脚本逻辑 → 模板展示 → i18n / 日志 / 权限 / 路由 |
-| 验证 | 至少 `yarn build`，需要时联调或 UI 回归 |
+| 验证 | 至少 `yarn build`，需要时联调或 UI 驱动 E2E 回归 |
 | 文档同步 | 只有形成稳定规则时才更新长期设计 / 规范文档 |
 
 ## Hard Rules
@@ -51,12 +51,21 @@ Check these when relevant:
 
 ## Verification
 
-- build: `cd frontend && yarn build`
+- build when the verification point is static structure / types / styles only:
+  - `cd frontend && yarn build`
 - integration start / status:
   - `./scripts/macos-dev.sh start`
   - `./scripts/macos-dev.sh status`
-- UI regression when needed:
-  - `cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e`
+- target UI-driven E2E when validating UI + API + DB together:
+  - `./scripts/macos-dev.sh start`
+  - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)`
+  - `./scripts/macos-dev.sh stop`
+- full UI-driven regression when needed:
+  - `./scripts/macos-dev.sh start`
+  - `(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e)`
+  - `./scripts/macos-dev.sh stop`
+
+UI-driven E2E is not frontend-only. Use it when menu / button semantics, page reachability, real API interaction, or UI / API consistency must be verified.
 
 ## Stop Points
 
