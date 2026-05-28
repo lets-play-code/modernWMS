@@ -116,12 +116,24 @@
 
 ### 常用命令
 
-```bash
-cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~StockServiceTests"
-```
+**目标单元测试：**
 
 ```bash
-cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj
+cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~<ServiceTests>"
+```
+
+**目标 API E2E：**
+
+```bash
+cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj --filter "FullyQualifiedName~<ContextOrFeature>"
+```
+
+**目标 UI 驱动 E2E（当变更会影响真实页面语义或前后端一致性时）：**
+
+```bash
+./scripts/macos-dev.sh start
+(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)
+./scripts/macos-dev.sh stop
 ```
 
 🛑 **强制停止点**：测试表达的新行为与用户确认一致后，再继续改实现。
@@ -166,13 +178,26 @@ cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj
 1. 当前修改的测试
 2. 受影响模块的测试类 / feature
 3. 后端构建
-4. 必要时完整后端验证
+4. 如果该变更会落到真实页面语义或前后端一致性，再跑目标 UI 驱动 E2E
+5. 必要时完整后端验证
 
 ### 常用命令
+
+**后端构建：**
 
 ```bash
 cd backend && dotnet build ModernWMS.sln
 ```
+
+**目标 UI 驱动 E2E（需要验证 UI + API + DB 时）：**
+
+```bash
+./scripts/macos-dev.sh start
+(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)
+./scripts/macos-dev.sh stop
+```
+
+**完整后端验证：**
 
 ```bash
 ./scripts/test-all.sh --skip-ui

@@ -7,7 +7,7 @@
 前置条件：
 - 需求分析或设计已确认
 - 已明确目标上下文与 MVP 范围
-- 已确定应优先补 API E2E 还是单元测试
+- 已确定应优先补 API E2E 还是单元测试；若改动会落到真实页面语义或前后端一致性，还要评估是否补 UI 驱动 E2E
 
 ## 必读文档
 
@@ -31,6 +31,7 @@
 | 分页查询 | `PageSearch` + `SearchObject` + `QueryCollection` |
 | API E2E | Reqnroll + xUnit + Testcontainers.MySql |
 | 单元测试 | xUnit + FluentAssertions |
+| UI 驱动 E2E | Playwright（真实前端 + 后端 API + 数据库，需要时补充） |
 | 全量验证 | `./scripts/test-all.sh --skip-ui` |
 
 ## 核心原则
@@ -100,6 +101,14 @@
 - 库存计算、状态流转、边界条件
 - API E2E 已覆盖主流程，但还需补局部规则
 
+### UI 驱动 E2E 适用场景
+
+适用于：
+- 菜单、按钮、路由、前端禁用态 / 可见性等验证点在 UI
+- 需要确认前端操作与真实后端 API / DB 协同工作
+- 需要保护前端基于后端字段做的状态展示、权限语义、前后端一致性逻辑
+- API E2E 已覆盖主流程，但仍需补“真实 UI 是否按预期工作”的保护
+
 ### API E2E 文件位置
 
 - Feature：`backend/ModernWMS.Tests.ApiE2E/Features/<Context>/...feature`
@@ -131,12 +140,24 @@
 
 ### 常用命令
 
-```bash
-cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj
-```
+**目标 API E2E：**
 
 ```bash
-cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~AsnServiceTests"
+cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj --filter "FullyQualifiedName~<ContextOrFeature>"
+```
+
+**目标单元测试：**
+
+```bash
+cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~<ServiceTests>"
+```
+
+**目标 UI 驱动 E2E（需要验证 UI + API + DB 时）：**
+
+```bash
+./scripts/macos-dev.sh start
+(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)
+./scripts/macos-dev.sh stop
 ```
 
 ### 目标
@@ -198,17 +219,38 @@ cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --fil
 
 1. 先跑当前新增 / 调整的测试
 2. 再跑相关测试类或相关 feature
-3. 必要时再跑完整后端验证
+3. 如果该能力会落到真实页面语义或前后端一致性，再跑目标 UI 驱动 E2E
+4. 必要时再跑完整后端验证
 
 ### 常用命令
 
+**目标单元测试：**
+
 ```bash
-cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~DispatchlistServiceTests"
+cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~<ServiceTests>"
 ```
+
+**目标 API E2E：**
+
+```bash
+cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj --filter "FullyQualifiedName~<ContextOrFeature>"
+```
+
+**后端构建：**
 
 ```bash
 cd backend && dotnet build ModernWMS.sln
 ```
+
+**目标 UI 驱动 E2E（需要验证 UI + API + DB 时）：**
+
+```bash
+./scripts/macos-dev.sh start
+(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)
+./scripts/macos-dev.sh stop
+```
+
+**完整后端验证：**
 
 ```bash
 ./scripts/test-all.sh --skip-ui

@@ -27,7 +27,7 @@
 | 路由 | Vue Router 4 |
 | 多语言 | Vue I18n |
 | 请求 | Axios（统一封装在 `utils/http/request.ts`） |
-| E2E | Playwright |
+| UI 驱动 E2E | Playwright（真实前端 + 后端 API + 数据库） |
 | 构建验证 | `cd frontend && yarn build` |
 
 ## 核心原则
@@ -46,7 +46,7 @@ F1. 分析当前 API 与数据契约
 F2. 补 API / 类型 / i18n
 F3. 实现页面或弹窗
 F4. 接路由 / 权限 / 日志
-F5. 验证构建与必要联调
+F5. 验证构建、联调与必要的 UI 驱动 E2E
 ```
 
 ---
@@ -187,11 +187,11 @@ F5. 验证构建与必要联调
 
 ---
 
-## 步骤 F5：验证构建与必要联调
+## 步骤 F5：验证构建、联调与必要的 UI 驱动 E2E
 
 ### 最小验证命令
 
-**仅前端改动：**
+**仅前端静态改动，且验证点不依赖真实后端：**
 
 ```bash
 cd frontend && yarn build
@@ -204,17 +204,35 @@ cd frontend && yarn build
 ./scripts/macos-dev.sh status
 ```
 
-**需要 UI E2E 时：**
+**需要 UI 驱动 E2E 时（验证 UI + API + DB 一起工作）：**
 
 ```bash
 ./scripts/macos-dev.sh start
-cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e
+(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)
 ./scripts/macos-dev.sh stop
 ```
 
+**需要全量 UI 驱动回归时：**
+
+```bash
+./scripts/macos-dev.sh start
+(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e)
+./scripts/macos-dev.sh stop
+```
+
+### UI 驱动 E2E 适用场景
+
+UI 驱动 E2E **不是只测前端**，它会在真实前端、后端 API 和数据库之上验证整条用户链路。
+
+适用于：
+- 验证点在菜单、按钮、路由、页面可达、列表 / 表单展示等 UI 语义
+- 需要确认真实 UI 操作能触发正确的后端 API 结果
+- 需要保护前端显示与后端状态 / 权限 / 返回字段的一致性逻辑
+- API E2E 已覆盖后端主流程，但仍缺少 UI / API 一致性保护
+
 > 长运行命令优先复用 `./scripts/macos-dev.sh`，或放入 `tmux`，不要直接在当前终端裸跑长期服务。
 
-🛑 **强制停止点**：构建或联调结果出来后，和用户确认交互是否正确。
+🛑 **强制停止点**：构建、联调或 UI 驱动 E2E 结果出来后，和用户确认交互是否正确。
 
 ---
 

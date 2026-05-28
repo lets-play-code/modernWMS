@@ -105,12 +105,20 @@
 
 ## 步骤 3：每项后跑最小充分验证
 
+如果重构触及用户可见语义或前后端边界，除了构建 / 后端测试外，还要评估是否补 **UI 驱动 E2E**。它不是只测前端，而是在真实 UI、后端 API 和数据库之上验证行为不变。
+
 ### 后端
 
-**局部单元测试：**
+**局部单元测试（service / core 分支、边界条件）：**
 
 ```bash
-cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~StockServiceTests"
+cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~<ServiceTests>"
+```
+
+**目标 API E2E（真实 HTTP 契约与多层联动）：**
+
+```bash
+cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj --filter "FullyQualifiedName~<ContextOrFeature>"
 ```
 
 **后端构建：**
@@ -125,19 +133,27 @@ cd backend && dotnet build ModernWMS.sln
 ./scripts/test-all.sh --skip-ui
 ```
 
-### 前端
+### 前端 / UI 驱动 E2E
 
-**构建验证：**
+**构建验证（静态结构、类型、样式）：**
 
 ```bash
 cd frontend && yarn build
 ```
 
-**必要时 UI E2E：**
+**目标 UI 驱动 E2E（验证 UI + API + DB 一起工作）：**
 
 ```bash
 ./scripts/macos-dev.sh start
-cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e
+(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)
+./scripts/macos-dev.sh stop
+```
+
+**全量 UI 驱动回归：**
+
+```bash
+./scripts/macos-dev.sh start
+(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e)
 ./scripts/macos-dev.sh stop
 ```
 

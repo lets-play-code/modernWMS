@@ -22,9 +22,10 @@ ModernWMS 的测试保护按以下顺序建设：
 2. **后端核心模块单元/组件测试补强**
    - 覆盖服务层复杂分支、边界条件、状态流转和库存计算。
    - 用于补齐 API E2E 难以稳定覆盖的分支和覆盖率。
-3. **少量 UI E2E 测试冒烟**
-   - 覆盖登录、菜单加载、库存/ASN/出库关键页面可达。
-   - UI 测试不替代 API E2E 和后端测试。
+3. **少量 UI 驱动 E2E（Playwright）**
+   - 覆盖登录、菜单加载、关键页面可达、前端权限语义，以及前后端一致性逻辑。
+   - 适用于验证点落在 UI，或需要确认 UI 与 API / DB 真实协作时。
+   - UI 驱动 E2E 不替代 API E2E 和后端测试；它补的是“包含真实 UI 的端到端保护”。
 
 后端整体覆盖率目标：`ModernWMS.Core + ModernWMS.WMS` 总体覆盖率应高于 80%。
 
@@ -491,6 +492,26 @@ dotnet build ModernWMS.sln
 
 ### 10.2 后端测试与覆盖率
 
+#### 10.2.1 目标单元测试
+
+适用：service / core 复杂分支、边界条件、状态流转、库存计算等；验证点主要在后端内部逻辑，不需要真实 HTTP 或浏览器。
+
+```bash
+cd backend
+dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~<ServiceTests>"
+```
+
+#### 10.2.2 目标 API E2E
+
+适用：真实 HTTP 契约、Controller + Service + DB 联动、关键业务流程；验证点在 API 层，不需要浏览器 UI。
+
+```bash
+cd backend
+dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj --filter "FullyQualifiedName~<ContextOrFeature>"
+```
+
+#### 10.2.3 后端全量测试与覆盖率
+
 ```bash
 cd backend
 dotnet test ModernWMS.sln --collect:"XPlat Code Coverage" --settings coverlet.runsettings
@@ -513,25 +534,47 @@ python3 ../scripts/check-dotnet-coverage.py \
 ./scripts/test-all.sh --skip-ui
 ```
 
-- `--skip-ui` 只跳过 Playwright UI E2E，不跳过后端 API E2E / 单元测试 / 覆盖率检查。
+- `--skip-ui` 只跳过 Playwright UI 驱动 E2E，不跳过后端 API E2E / 单元测试 / 覆盖率检查。
 - `MODERNWMS_COVERAGE_THRESHOLD` 仅用于阶段性诊断；正式验收不得降低默认 `0.80` 门槛。
 - 覆盖率达标不等于测试质量达标。每个 context 达标后应使用 mutation-style 抽样：临时破坏关键业务分支，确认对应测试失败，然后恢复生产代码。
 
-### 10.3 UI E2E
+### 10.3 UI 驱动 E2E（Playwright）
 
-UI E2E 需要真实前端、后端和数据库。优先通过仓库脚本启动完整系统：
+UI 驱动 E2E 需要真实前端、后端和数据库，属于“**包含 UI 的端到端验证**”，不是“**只是前端测试**”。
+
+适用场景：
+
+- 验证点在菜单、按钮、路由、列表 / 表单展示、提示文案等 UI 语义
+- 需要确认真实 UI 操作能驱动后端 API 成功完成业务链路
+- 需要保护前端基于后端字段做的可见性、disabled 状态、状态标签、字段映射、一致性判断
+- API E2E 已覆盖后端主流程，但仍缺少 UI / API 一致性保护
+
+优先先跑目标 spec，再视情况回归全量：
+
+**目标 spec：**
 
 ```bash
 ./scripts/macos-dev.sh start
-cd frontend
-COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e
-cd ..
+(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)
 ./scripts/macos-dev.sh stop
 ```
 
+**全量 UI 驱动回归：**
+
+```bash
+./scripts/macos-dev.sh start
+(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e)
+./scripts/macos-dev.sh stop
+```
+
+说明：
+
+- 全量 UI 驱动 E2E 较慢时，优先在 `tmux` 或 `./scripts/test-all.sh` 中执行，避免阻塞长会话。
+- API E2E 与 UI 驱动 E2E 应按“最小充分验证”组合，不要求每次都全跑。
+
 #### 10.3.1 角色驱动的 UI 权限测试约定
 
-当 UI E2E 需要保护“菜单是否可见 / 按钮是否 disabled”这类前端权限语义时，统一采用以下模式：
+当 UI 驱动 E2E 需要保护“菜单是否可见 / 按钮是否 disabled”这类前端权限语义时，统一采用以下模式：
 
 - **角色与测试用户通过真实后端 API 对齐**
   - 不通过 UI 手工维护测试角色

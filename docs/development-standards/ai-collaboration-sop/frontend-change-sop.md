@@ -33,7 +33,7 @@
 2. 分析受影响文件
 3. 修改 API / 类型 / 组件 / 文案
 4. 验证构建与必要联调
-5. 如有需要，补前端 E2E 或回归检查
+5. 如有需要，补 UI 驱动 E2E 或回归检查
 ```
 
 ---
@@ -129,9 +129,11 @@
 
 ---
 
-## 步骤 4：验证构建与必要联调
+## 步骤 4：验证构建、联调与必要的 UI 驱动 E2E
 
 ### 最小验证
+
+**仅前端静态改动，且验证点不依赖真实后端：**
 
 ```bash
 cd frontend && yarn build
@@ -144,13 +146,31 @@ cd frontend && yarn build
 ./scripts/macos-dev.sh status
 ```
 
-### 如果需要 UI 回归
+### 如果需要目标 UI 驱动 E2E
 
 ```bash
 ./scripts/macos-dev.sh start
-cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e
+(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)
 ./scripts/macos-dev.sh stop
 ```
+
+### 如果需要全量 UI 驱动回归
+
+```bash
+./scripts/macos-dev.sh start
+(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e)
+./scripts/macos-dev.sh stop
+```
+
+### UI 驱动 E2E 适用场景
+
+UI 驱动 E2E **不是只测前端**，而是在真实前端、后端 API 和数据库之上验证整条用户链路。
+
+适用于：
+- 菜单、按钮、路由、页面可达、列表 / 表单展示等验证点落在 UI
+- 需要确认真实 UI 操作与后端 API 返回一起工作正常
+- 需要保护前端显示与后端字段、状态、权限语义的一致性逻辑
+- API E2E 已覆盖后端主流程，但仍缺少 UI / API 一致性保护
 
 🛑 **强制停止点**：验证结果出来后，等待用户确认 UI / 交互是否符合预期。
 

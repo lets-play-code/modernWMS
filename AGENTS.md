@@ -137,31 +137,77 @@ cd frontend && COREPACK_ENABLE_AUTO_PIN=0 yarn install --ignore-engines --frozen
 ```
 
 ## 常用验证命令
-根据改动范围选择最小充分验证，不要无差别全量运行。
+根据改动范围选择最小充分验证，不要无差别全量运行。**构建命令只能证明可编译，不能替代测试命令。**
 
-### 仅前端改动
+### 后端单元测试
+适用：service / core 复杂分支、边界条件、状态流转、库存计算等；验证点主要在后端内部逻辑，不需要真实 HTTP 或浏览器。
+
+```bash
+cd backend && dotnet test ModernWMS.Tests.Unit/ModernWMS.Tests.Unit.csproj --filter "FullyQualifiedName~<ServiceTests>"
+```
+
+### 后端 API E2E
+适用：真实 HTTP 契约、Controller + Service + DB 联动、关键业务流程；验证点在 API 层，不需要浏览器 UI。
+
+```bash
+cd backend && dotnet test ModernWMS.Tests.ApiE2E/ModernWMS.Tests.ApiE2E.csproj --filter "FullyQualifiedName~<ContextOrFeature>"
+```
+
+### UI 驱动 E2E（Playwright）
+适用：需要同时验证 **UI + API + DB** 正常协作；验证点在菜单 / 按钮权限、页面可达、前端展示语义、以及前后端一致性逻辑。它**不是“只是前端测试”**，而是包含真实 UI 的更大 E2E。
+
+目标 spec：
+```bash
+./scripts/macos-dev.sh start
+(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e e2e/specs/<spec>.ts)
+./scripts/macos-dev.sh stop
+```
+
+全量 UI 回归：
+```bash
+./scripts/macos-dev.sh start
+(cd frontend && COREPACK_ENABLE_AUTO_PIN=0 corepack yarn e2e)
+./scripts/macos-dev.sh stop
+```
+
+### 仅前端构建验证
+适用：纯前端静态结构、类型或样式改动；**不能证明真实 API / 权限 / 路由链路正确**。
+
 ```bash
 cd frontend && yarn build
 ```
 
-### 仅后端改动
+### 仅后端构建验证
+适用：确认后端可编译；**不能替代单元测试或 API E2E**。
+
 ```bash
 cd backend && dotnet build ModernWMS.sln
 ```
 
 ### 启动脚本 / 端口 / 联调相关改动
+适用：验证脚本、端口、服务拉起、登录链路与本地联调状态。
+
 ```bash
 ./scripts/macos-dev.sh status
 ```
+
 必要时再看：
 ```bash
 ./scripts/macos-dev.sh logs
 ```
 
-### 前后端都改了
+### 后端全量验证（含覆盖率，不含 UI）
+适用：后端改动范围较大，或需要覆盖率验收。
+
 ```bash
-cd backend && dotnet build ModernWMS.sln
-cd frontend && yarn build
+./scripts/test-all.sh --skip-ui
+```
+
+### 全量验证（含 UI 驱动 E2E）
+适用：需要后端测试、覆盖率、以及真实 UI 端到端一起通过。
+
+```bash
+./scripts/test-all.sh
 ```
 
 ## 手动启动长运行进程的约定
