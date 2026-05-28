@@ -58,14 +58,33 @@ brew install tmux
 docker info
 ```
 
-#### 3. 安装 Node.js
+#### 3. 安装 Node.js / Yarn（推荐使用 asdf）
 
-推荐使用你熟悉的版本管理工具（如 `nvm` / `fnm` / `asdf`）安装 Node.js。
-
-#### 4. 安装 Yarn Classic 1.x
+如果你使用 `asdf`，仓库根目录已经提供 `.tool-versions`，推荐直接在仓库根目录执行：
 
 ```bash
-npm install -g yarn@1.22.21
+asdf plugin add nodejs   # 首次使用时执行一次
+asdf plugin add yarn     # 首次使用时执行一次
+asdf install
+```
+
+当前仓库固定版本：
+
+- `nodejs 22.12.0`
+- `yarn 1.22.22`
+
+如果 `asdf install` 在安装 Yarn 时提示缺少 `gpg`，先执行：
+
+```bash
+brew install gnupg
+```
+
+如果你不使用 `asdf`，也可以继续用自己熟悉的版本管理工具（如 `nvm` / `fnm`）安装 Node.js。
+
+#### 4. 不使用 asdf 时安装 Yarn Classic 1.x
+
+```bash
+npm install -g yarn@1.22.22
 ```
 
 确认版本：
